@@ -5,8 +5,8 @@ const urlsToCache = [
   '/style.css',
   '/spots.js',
   '/icon.png',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/onigiriya_kanatake_192.png',
+  '/onigiriya_kanatake_512.png'
 ];
 
 self.addEventListener('install', e => {
