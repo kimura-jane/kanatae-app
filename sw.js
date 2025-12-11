@@ -1,12 +1,14 @@
-const CACHE_NAME = 'kanatake-v1';
+const CACHE_NAME = 'kanatake-v2';
 const urlsToCache = [
   '/',
   '/index.html',
   '/style.css',
   '/spots.js',
+  '/spots-all.js',
   '/icon.png',
   '/onigiriya_kanatake_192.png',
-  '/onigiriya_kanatake_512.png'
+  '/onigiriya_kanatake_512.png',
+  '/IMG_7605.jpeg'
 ];
 
 self.addEventListener('install', e => {
