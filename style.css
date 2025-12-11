@@ -1,0 +1,302 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", system-ui, sans-serif;
+  background: #faf9f3;
+  color: #333;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ヘッダー */
+.header {
+  background: linear-gradient(135deg, #f5a623, #f7c86c);
+  color: white;
+  padding: 12px 16px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.header h1 {
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.header-icon {
+  width: 32px;
+  height: 32px;
+}
+
+/* タブナビ */
+.tab-nav {
+  display: flex;
+  background: white;
+  border-bottom: 1px solid #eee;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 12px 8px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn.active {
+  color: #f5a623;
+  border-bottom: 3px solid #f5a623;
+  font-weight: 700;
+}
+
+/* コンテンツエリア */
+.tab-content {
+  flex: 1;
+  overflow: hidden;
+}
+
+.tab-pane {
+  display: none;
+  height: 100%;
+  overflow: auto;
+}
+
+.tab-pane.active {
+  display: block;
+}
+
+/* カレンダー */
+.calendar {
+  padding: 16px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.calendar-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f5a623;
+}
+
+.calendar-nav {
+  background: #f5a623;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-dow {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #888;
+  padding: 8px 0;
+}
+
+.calendar-dow:first-child { color: #e74c3c; }
+.calendar-dow:last-child { color: #3498db; }
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.calendar-day.empty {
+  background: transparent;
+  cursor: default;
+}
+
+.calendar-day.has-event {
+  background: #fff3d0;
+  border: 2px solid #f5a623;
+  font-weight: 700;
+}
+
+.calendar-day.today {
+  background: #f5a623;
+  color: white;
+}
+
+.calendar-day.has-event.today {
+  background: #f5a623;
+  border-color: #d4880a;
+}
+
+.event-dot {
+  width: 6px;
+  height: 6px;
+  background: #f5a623;
+  border-radius: 50%;
+  margin-top: 2px;
+}
+
+.calendar-day.today .event-dot {
+  background: white;
+}
+
+/* イベント詳細モーダル */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 320px;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.modal-date {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.modal-time {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 16px;
+}
+
+.modal-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: #f5a623;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.modal-close {
+  background: #eee;
+  color: #666;
+}
+
+/* マップ */
+#map {
+  height: 100%;
+}
+
+.leaflet-popup-content strong {
+  font-size: 14px;
+}
+
+/* クーポン */
+.coupon {
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  text-align: center;
+}
+
+.coupon-icon {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 16px;
+}
+
+.coupon-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f5a623;
+  margin-bottom: 8px;
+}
+
+.coupon-desc {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 24px;
+}
+
+.coupon-card {
+  background: linear-gradient(135deg, #fff9e6, #fff3cc);
+  border: 3px dashed #f5a623;
+  border-radius: 16px;
+  padding: 32px 24px;
+  max-width: 280px;
+}
+
+.coupon-label {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.coupon-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #f5a623;
+}
+
+.coupon-note {
+  font-size: 12px;
+  color: #999;
+  margin-top: 24px;
+}
