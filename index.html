@@ -57,6 +57,10 @@
       <!-- マップタブ -->
       <section class="tab-pane" id="map-pane">
         <div id="map"></div>
+        <section class="spot-card" id="listCard">
+          <p class="spot-title">出店リスト（タップで地図）</p>
+          <ol class="spot-list" id="spotList"></ol>
+        </section>
       </section>
       
       <!-- クーポンタブ -->
@@ -91,6 +95,8 @@
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabPanes = document.querySelectorAll('.tab-pane');
     let mapInitialized = false;
+    let mapInstance = null;
+    let markersArray = [];
     
     tabBtns.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -105,6 +111,9 @@
         if (tabId === 'map' && !mapInitialized) {
           initMap();
           mapInitialized = true;
+        }
+        if (tabId === 'map' && mapInstance) {
+          setTimeout(() => mapInstance.invalidateSize(), 100);
         }
       });
     });
@@ -130,6 +139,23 @@
       });
       
       return events;
+    }
+    
+    function getShortName(name) {
+      // 場所名を短く
+      const shortcuts = {
+        '川口さくら病院': 'さくら病院',
+        '獨協大学 草加キャンパス': '獨協大学',
+        'さいたま市役所 浦和本庁舎': 'さいたま市役所',
+        '小さな森の家 取手東': '森の家取手',
+        '江戸ONIGIRI祭り（レインボーライド2025 マルチスポーツ会場）': 'お台場',
+        'ダイナム戸ヶ崎店': 'ダイナム戸ヶ崎',
+        '保護犬譲渡会（MEGUROMARC GARDEN中央広場）': '目黒譲渡会',
+        '杉並区 こども支援（会場未定）': '杉並こども',
+        '立教大学 池袋キャンパス': '立教大学',
+        '花栗子育てひろば（かなたけサンタ）': 'サンタ🎅'
+      };
+      return shortcuts[name] || name.substring(0, 6);
     }
     
     function renderCalendar() {
@@ -163,9 +189,11 @@
         if (hasEvent) classes += ' has-event';
         if (isToday) classes += ' today';
         
+        const placeName = hasEvent ? `<div class="calendar-place">${getShortName(events[d][0].name)}</div>` : '';
+        
         html += `<div class="${classes}" data-day="${d}">
-          ${d}
-          ${hasEvent ? '<div class="event-dot"></div>' : ''}
+          <span class="calendar-date">${d}</span>
+          ${placeName}
         </div>`;
       }
       
@@ -224,11 +252,11 @@
     
     // マップ
     function initMap() {
-      const map = L.map('map').setView([35.68, 139.76], 10);
+      mapInstance = L.map('map').setView([35.75, 139.75], 10);
       
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '© OSM © CARTO'
-      }).addTo(map);
+      }).addTo(mapInstance);
       
       const icon = L.icon({
         iconUrl: 'icon.png',
@@ -238,25 +266,35 @@
       });
       
       const spots = window.spots || [];
-      const markers = [];
+      const list = document.getElementById('spotList');
       
-      spots.forEach(s => {
+      spots.forEach((s, i) => {
         if (s.lat && s.lng) {
           const m = L.marker([s.lat, s.lng], { icon })
-            .addTo(map)
+            .addTo(mapInstance)
             .bindPopup(
               `<strong>${s.name}</strong><br>${s.date}${s.time ? ' ・ ' + s.time : ''}<br>` +
               `<a href="https://www.google.com/maps?q=${s.lat},${s.lng}" target="_blank">Googleマップで開く</a>`
             );
-          markers.push(m);
+          markersArray[i] = m;
         }
+        
+        // 右下リスト
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="spot-name">${s.name}</span> <span class="badge">${s.date}</span>`;
+        li.addEventListener('click', () => {
+          if (markersArray[i]) {
+            mapInstance.setView(markersArray[i].getLatLng(), 14, { animate: true });
+            markersArray[i].openPopup();
+          }
+        });
+        list.appendChild(li);
       });
       
-      if (markers.length) {
-        map.fitBounds(L.featureGroup(markers).getBounds().pad(0.2));
+      const existing = markersArray.filter(Boolean);
+      if (existing.length) {
+        mapInstance.fitBounds(L.featureGroup(existing).getBounds().pad(0.15));
       }
-      
-      setTimeout(() => map.invalidateSize(), 100);
     }
     
     // Service Worker登録
