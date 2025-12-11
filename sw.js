@@ -1,14 +1,14 @@
-const CACHE_NAME = 'kanatake-v2';
+const CACHE_NAME = 'kanatake-v3';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/spots.js',
-  '/spots-all.js',
-  '/icon.png',
-  '/onigiriya_kanatake_192.png',
-  '/onigiriya_kanatake_512.png',
-  '/IMG_7605.jpeg'
+  '/kanatae-app/',
+  '/kanatae-app/index.html',
+  '/kanatae-app/style.css',
+  '/kanatae-app/spots.js',
+  '/kanatae-app/spots-all.js',
+  '/kanatae-app/icon.png',
+  '/kanatae-app/onigiriya_kanatake_192.png',
+  '/kanatae-app/onigiriya_kanatake_512.png',
+  '/kanatae-app/IMG_7605.jpeg'
 ];
 
 self.addEventListener('install', e => {
