@@ -39,6 +39,7 @@
     <nav class="tab-nav">
       <button class="tab-btn active" data-tab="calendar">📅 カレンダー</button>
       <button class="tab-btn" data-tab="map">📍 マップ</button>
+      <button class="tab-btn" data-tab="menu">🍙 メニュー</button>
       <button class="tab-btn" data-tab="coupon">🎫 クーポン</button>
     </nav>
     
@@ -62,6 +63,13 @@
           <p class="spot-title">出店リスト（タップで地図）</p>
           <ol class="spot-list" id="spotList"></ol>
         </section>
+      </section>
+      
+      <!-- メニュータブ -->
+      <section class="tab-pane" id="menu">
+        <div class="menu-container">
+          <img src="IMG_7605.jpeg" alt="おにぎり屋かなたけ メニュー" class="menu-image">
+        </div>
       </section>
       
       <!-- クーポンタブ -->
@@ -107,7 +115,12 @@
         tabPanes.forEach(p => p.classList.remove('active'));
         
         btn.classList.add('active');
-        document.getElementById(tabId === 'map' ? 'map-pane' : tabId).classList.add('active');
+        
+        if (tabId === 'map') {
+          document.getElementById('map-pane').classList.add('active');
+        } else {
+          document.getElementById(tabId).classList.add('active');
+        }
         
         if (tabId === 'map' && !mapInitialized) {
           initMap();
