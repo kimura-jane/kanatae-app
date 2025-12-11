@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>おにぎり屋かなたけ</title>
+  
+  <meta name="description" content="おにぎり屋かなたけの出店スケジュール・マップ・クーポン">
+  <meta name="theme-color" content="#f5a623">
+  
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  
+  <!-- OGP -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="おにぎり屋かなたけ">
+  <meta property="og:title" content="おにぎり屋かなたけ">
+  <meta property="og:description" content="出店スケジュール・マップ・クーポン">
+  <meta property="og:image" content="icon-512.png">
+  
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+  
+  <link rel="stylesheet" href="style.css">
+  <script src="spots.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>
+        <img src="icon.png" alt="" class="header-icon">
+        おにぎり屋かなたけ
+      </h1>
+    </header>
+    
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="calendar">📅 カレンダー</button>
+      <button class="tab-btn" data-tab="map">📍 マップ</button>
+      <button class="tab-btn" data-tab="coupon">🎫 クーポン</button>
+    </nav>
+    
+    <main class="tab-content">
+      <!-- カレンダータブ -->
+      <section class="tab-pane active" id="calendar">
+        <div class="calendar">
+          <div class="calendar-header">
+            <button class="calendar-nav" id="prevMonth">◀</button>
+            <h2 class="calendar-title" id="calendarTitle">2025年12月</h2>
+            <button class="calendar-nav" id="nextMonth">▶</button>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+      </section>
+      
+      <!-- マップタブ -->
+      <section class="tab-pane" id="map-pane">
+        <div id="map"></div>
+      </section>
+      
+      <!-- クーポンタブ -->
+      <section class="tab-pane" id="coupon">
+        <div class="coupon">
+          <img src="icon.png" alt="かなたけ" class="coupon-icon">
+          <h2 class="coupon-title">スマイルクーポン</h2>
+          <p class="coupon-desc">この画面を店主に見せてね</p>
+          <div class="coupon-card">
+            <p class="coupon-label">特典</p>
+            <p class="coupon-value">😊 店主の笑顔</p>
+          </div>
+          <p class="coupon-note">※ 何度でも使えます</p>
+        </div>
+      </section>
+    </main>
+  </div>
+  
+  <!-- イベント詳細モーダル -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <p class="modal-date" id="modalDate"></p>
+      <h3 class="modal-title" id="modalTitle"></h3>
+      <p class="modal-time" id="modalTime"></p>
+      <a class="modal-btn" id="modalMap" href="#" target="_blank">Googleマップで開く</a>
+      <button class="modal-btn modal-close" id="modalClose">閉じる</button>
+    </div>
+  </div>
+  
+  <script>
+    // タブ切り替え
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+    let mapInitialized = false;
+    
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tabId = btn.dataset.tab;
+        
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabPanes.forEach(p => p.classList.remove('active'));
+        
+        btn.classList.add('active');
+        document.getElementById(tabId === 'map' ? 'map-pane' : tabId).classList.add('active');
+        
+        if (tabId === 'map' && !mapInitialized) {
+          initMap();
+          mapInitialized = true;
+        }
+      });
+    });
+    
+    // カレンダー
+    let currentYear = 2025;
+    let currentMonth = 12;
+    
+    function getEventsForMonth(year, month) {
+      const spots = window.spots || [];
+      const events = {};
+      
+      spots.forEach(spot => {
+        const match = spot.date.match(/(\d+)\/(\d+)/);
+        if (match) {
+          const m = parseInt(match[1]);
+          const d = parseInt(match[2]);
+          if (m === month) {
+            if (!events[d]) events[d] = [];
+            events[d].push(spot);
+          }
+        }
+      });
+      
+      return events;
+    }
+    
+    function renderCalendar() {
+      const title = document.getElementById('calendarTitle');
+      const grid = document.getElementById('calendarGrid');
+      
+      title.textContent = `${currentYear}年${currentMonth}月`;
+      
+      const firstDay = new Date(currentYear, currentMonth - 1, 1);
+      const lastDay = new Date(currentYear, currentMonth, 0);
+      const daysInMonth = lastDay.getDate();
+      const startDow = firstDay.getDay();
+      
+      const events = getEventsForMonth(currentYear, currentMonth);
+      const today = new Date();
+      const isCurrentMonth = today.getFullYear() === currentYear && today.getMonth() + 1 === currentMonth;
+      const todayDate = today.getDate();
+      
+      let html = ['日','月','火','水','木','金','土']
+        .map(d => `<div class="calendar-dow">${d}</div>`).join('');
+      
+      for (let i = 0; i < startDow; i++) {
+        html += '<div class="calendar-day empty"></div>';
+      }
+      
+      for (let d = 1; d <= daysInMonth; d++) {
+        const hasEvent = events[d] && events[d].length > 0;
+        const isToday = isCurrentMonth && d === todayDate;
+        
+        let classes = 'calendar-day';
+        if (hasEvent) classes += ' has-event';
+        if (isToday) classes += ' today';
+        
+        html += `<div class="${classes}" data-day="${d}">
+          ${d}
+          ${hasEvent ? '<div class="event-dot"></div>' : ''}
+        </div>`;
+      }
+      
+      grid.innerHTML = html;
+      
+      grid.querySelectorAll('.calendar-day.has-event').forEach(el => {
+        el.addEventListener('click', () => {
+          const day = parseInt(el.dataset.day);
+          showEventModal(day, events[day]);
+        });
+      });
+    }
+    
+    function showEventModal(day, eventList) {
+      const modal = document.getElementById('modal');
+      const event = eventList[0];
+      
+      document.getElementById('modalDate').textContent = `${currentMonth}月${day}日`;
+      document.getElementById('modalTitle').textContent = event.name;
+      document.getElementById('modalTime').textContent = event.time || '時間未定';
+      
+      const mapLink = document.getElementById('modalMap');
+      if (event.lat && event.lng) {
+        mapLink.href = `https://www.google.com/maps?q=${event.lat},${event.lng}`;
+        mapLink.style.display = 'block';
+      } else {
+        mapLink.style.display = 'none';
+      }
+      
+      modal.classList.add('active');
+    }
+    
+    document.getElementById('modal').addEventListener('click', e => {
+      if (e.target.id === 'modal' || e.target.id === 'modalClose') {
+        document.getElementById('modal').classList.remove('active');
+      }
+    });
+    
+    document.getElementById('prevMonth').addEventListener('click', () => {
+      currentMonth--;
+      if (currentMonth < 1) {
+        currentMonth = 12;
+        currentYear--;
+      }
+      renderCalendar();
+    });
+    
+    document.getElementById('nextMonth').addEventListener('click', () => {
+      currentMonth++;
+      if (currentMonth > 12) {
+        currentMonth = 1;
+        currentYear++;
+      }
+      renderCalendar();
+    });
+    
+    // マップ
+    function initMap() {
+      const map = L.map('map').setView([35.68, 139.76], 10);
+      
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OSM © CARTO'
+      }).addTo(map);
+      
+      const icon = L.icon({
+        iconUrl: 'icon.png',
+        iconSize: [44, 44],
+        iconAnchor: [22, 32],
+        popupAnchor: [0, -28]
+      });
+      
+      const spots = window.spots || [];
+      const markers = [];
+      
+      spots.forEach(s => {
+        if (s.lat && s.lng) {
+          const m = L.marker([s.lat, s.lng], { icon })
+            .addTo(map)
+            .bindPopup(
+              `<strong>${s.name}</strong><br>${s.date}${s.time ? ' ・ ' + s.time : ''}<br>` +
+              `<a href="https://www.google.com/maps?q=${s.lat},${s.lng}" target="_blank">Googleマップで開く</a>`
+            );
+          markers.push(m);
+        }
+      });
+      
+      if (markers.length) {
+        map.fitBounds(L.featureGroup(markers).getBounds().pad(0.2));
+      }
+      
+      setTimeout(() => map.invalidateSize(), 100);
+    }
+    
+    // Service Worker登録
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+    
+    // 初期化
+    document.addEventListener('DOMContentLoaded', renderCalendar);
+  </script>
+</body>
+</html>
