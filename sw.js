@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kanatake-v4';
+const CACHE_NAME = 'kanatake-v5';
 const urlsToCache = [
   '/kanatae-app/',
   '/kanatae-app/index.html',
@@ -9,10 +9,10 @@ const urlsToCache = [
   '/kanatae-app/onigiriya_kanatake_192.png',
   '/kanatae-app/onigiriya_kanatake_512.png',
   '/kanatae-app/IMG_7605.jpeg',
-  '/kanatae-app/cal.png',
-  '/kanatae-app/map.png',
-  '/kanatae-app/menu.png',
-  '/kanatae-app/coupon.png'
+  '/kanatae-app/1.png',
+  '/kanatae-app/2.png',
+  '/kanatae-app/3.png',
+  '/kanatae-app/4.png'
 ];
 
 self.addEventListener('install', e => {
