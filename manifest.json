@@ -2,21 +2,53 @@
   "name": "おにぎり屋かなたけ",
   "short_name": "かなたけ",
   "description": "おにぎり屋かなたけの出店スケジュール・マップ・クーポン",
+  "id": "/kanatae-app/",
   "start_url": "/kanatae-app/",
   "scope": "/kanatae-app/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#faf9f3",
   "theme_color": "#f5a623",
   "icons": [
     {
-      "src": "onigiriya_kanatake_192.png",
+      "src": "/kanatae-app/onigiriya_kanatake_192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "onigiriya_kanatake_512.png",
+      "src": "/kanatae-app/onigiriya_kanatake_512.png",
       "sizes": "512x512",
       "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/kanatae-app/cal.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "カレンダー"
+    },
+    {
+      "src": "/kanatae-app/map.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "マップ"
+    },
+    {
+      "src": "/kanatae-app/menu.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "メニュー"
+    },
+    {
+      "src": "/kanatae-app/coupon.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "クーポン"
     }
   ]
 }
