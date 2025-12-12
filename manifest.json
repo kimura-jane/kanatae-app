@@ -24,31 +24,31 @@
   "screenshots": [
     {
       "src": "/kanatae-app/cal.png",
-      "sizes": "1170x2532",
+      "sizes": "1179x2556",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "カレンダー"
+      "label": "カレンダー画面"
     },
     {
       "src": "/kanatae-app/map.png",
-      "sizes": "1170x2532",
+      "sizes": "1179x2556",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "マップ"
+      "label": "マップ画面"
     },
     {
       "src": "/kanatae-app/menu.png",
-      "sizes": "1170x2532",
+      "sizes": "1179x2556",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "メニュー"
+      "label": "メニュー画面"
     },
     {
       "src": "/kanatae-app/coupon.png",
-      "sizes": "1170x2532",
+      "sizes": "1179x2556",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "クーポン"
+      "label": "クーポン画面"
     }
   ]
 }
