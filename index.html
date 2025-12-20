@@ -8,10 +8,6 @@
   <meta name="description" content="おにぎり屋かなたけの出店スケジュール・マップ・クーポン">
   <meta name="theme-color" content="#f5a623">
 
-  <!-- iOS PWA -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-
   <!-- PWA -->
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="onigiriya_kanatake_192.png">
@@ -83,16 +79,14 @@
           <img src="icon.png" alt="かなたけ" class="coupon-icon">
           <h2 class="coupon-title">スマイルクーポン</h2>
           <p class="coupon-desc">この画面を店主に見せてね</p>
-
           <div class="coupon-card">
             <p class="coupon-label">特典</p>
             <p class="coupon-value">😊 店主の笑顔</p>
           </div>
-
           <p class="coupon-note">※ 何度でも使えます</p>
 
-          <button id="pushBtn" class="modal-btn" type="button">🔔 通知を受け取る</button>
-          <p id="pushStatus" style="margin-top:10px; color:#c00; font-weight:700;"></p>
+          <button class="coupon-btn" id="pushBtn" type="button">🔔 通知を受け取る</button>
+          <p id="pushStatus" style="margin-top:12px; color:#c00; font-weight:700;"></p>
         </div>
       </section>
     </main>
@@ -105,20 +99,19 @@
       <h3 class="modal-title" id="modalTitle"></h3>
       <p class="modal-time" id="modalTime"></p>
       <a class="modal-btn" id="modalMap" href="#" target="_blank">Googleマップで開く</a>
-      <button class="modal-btn modal-close" id="modalClose">閉じる</button>
+      <button class="modal-btn modal-close" id="modalClose" type="button">閉じる</button>
     </div>
   </div>
 
   <script>
-    /**********************
-     * ここだけ確認して
-     **********************/
-    // Cloudflare Workers の Push API（お前の worker URL）
+    // =========================
+    // 設定：Push API のベースURL
+    // =========================
     const PUSH_API_BASE = 'https://kanatae-push.la-kofu.workers.dev';
 
-    /**********************
-     * タブ切り替え
-     **********************/
+    // =========================
+    // タブ切り替え
+    // =========================
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabPanes = document.querySelectorAll('.tab-pane');
     let mapInitialized = false;
@@ -150,28 +143,24 @@
       });
     });
 
-    /**********************
-     * カレンダー（spots-all.js）
-     **********************/
+    // =========================
+    // カレンダー（spots-all.js）
+    // =========================
     let currentYear = 2025;
     let currentMonth = 12;
 
     function getEventsForMonth(year, month) {
       const spots = window.spotsAll || [];
       const events = {};
-
       spots.forEach(spot => {
-        const match = spot.date && spot.date.match(/(\d+)\/(\d+)/);
-        if (match) {
-          const m = parseInt(match[1], 10);
-          const d = parseInt(match[2], 10);
-          if (m === month) {
-            if (!events[d]) events[d] = [];
-            events[d].push(spot);
-          }
-        }
+        const match = (spot.date || '').match(/(\d+)\/(\d+)/);
+        if (!match) return;
+        const m = parseInt(match[1], 10);
+        const d = parseInt(match[2], 10);
+        if (m !== month) return;
+        if (!events[d]) events[d] = [];
+        events[d].push(spot);
       });
-
       return events;
     }
 
@@ -220,7 +209,8 @@
         '上野恩賜公園': '上野公園',
         '国立代々木競技場 第二体育館': '代々木'
       };
-      return shortcuts[name] || String(name || '').substring(0, 6);
+      if (!name) return '';
+      return shortcuts[name] || name.substring(0, 6);
     }
 
     function renderCalendar() {
@@ -247,7 +237,7 @@
       }
 
       for (let d = 1; d <= daysInMonth; d++) {
-        const hasEvent = events[d] && events[d].length > 0;
+        const hasEvent = !!(events[d] && events[d].length);
         const isToday = isCurrentMonth && d === todayDate;
 
         let classes = 'calendar-day';
@@ -274,10 +264,11 @@
 
     function showEventModal(day, eventList) {
       const modal = document.getElementById('modal');
-      const event = eventList[0];
+      const event = (eventList && eventList[0]) ? eventList[0] : null;
+      if (!event) return;
 
       document.getElementById('modalDate').textContent = `${currentMonth}月${day}日`;
-      document.getElementById('modalTitle').textContent = event.name;
+      document.getElementById('modalTitle').textContent = event.name || '';
       document.getElementById('modalTime').textContent = event.time || '時間未定';
 
       const mapLink = document.getElementById('modalMap');
@@ -299,19 +290,25 @@
 
     document.getElementById('prevMonth').addEventListener('click', () => {
       currentMonth--;
-      if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+      if (currentMonth < 1) {
+        currentMonth = 12;
+        currentYear--;
+      }
       renderCalendar();
     });
 
     document.getElementById('nextMonth').addEventListener('click', () => {
       currentMonth++;
-      if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+      if (currentMonth > 12) {
+        currentMonth = 1;
+        currentYear++;
+      }
       renderCalendar();
     });
 
-    /**********************
-     * マップ（spots.js = 今月のみ）
-     **********************/
+    // =========================
+    // マップ（spots.js = 今月のみ）
+    // =========================
     function initMap() {
       mapInstance = L.map('map').setView([35.75, 139.75], 10);
 
@@ -336,14 +333,14 @@
           const m = L.marker([s.lat, s.lng], { icon })
             .addTo(mapInstance)
             .bindPopup(
-              `<strong>${s.name}</strong><br>${s.date}${s.time ? ' ・ ' + s.time : ''}<br>` +
+              `<strong>${s.name || ''}</strong><br>${s.date || ''}${s.time ? ' ・ ' + s.time : ''}<br>` +
               `<a href="https://www.google.com/maps?q=${s.lat},${s.lng}" target="_blank" rel="noopener">Googleマップで開く</a>`
             );
           markersArray[i] = m;
         }
 
         const li = document.createElement('li');
-        li.innerHTML = `<span class="spot-name">${s.name}</span> <span class="badge">${s.date}</span>`;
+        li.innerHTML = `<span class="spot-name">${s.name || ''}</span> <span class="badge">${s.date || ''}</span>`;
         li.addEventListener('click', () => {
           if (markersArray[i]) {
             mapInstance.setView(markersArray[i].getLatLng(), 14, { animate: true });
@@ -359,122 +356,139 @@
       }
     }
 
-    /**********************
-     * Push 通知（安全に判定してから）
-     **********************/
+    // =========================
+    // Service Worker 登録（1回だけ）
+    // =========================
+    async function registerSW() {
+      if (!('serviceWorker' in navigator)) return null;
+      try {
+        const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+        return reg;
+      } catch {
+        return null;
+      }
+    }
+
+    // =========================
+    // Push 購読（iPhoneの落ちポイント全部潰す）
+    // =========================
     const pushBtn = document.getElementById('pushBtn');
     const pushStatus = document.getElementById('pushStatus');
 
-    function setStatus(msg, isError = true) {
-      pushStatus.style.color = isError ? '#c00' : '#0a7a2f';
+    function setStatus(msg, ok=false) {
       pushStatus.textContent = msg;
+      pushStatus.style.color = ok ? '#0a7' : '#c00';
     }
 
-    function urlBase64ToUint8Array(base64String) {
-      const padding = '='.repeat((4 - base64String.length % 4) % 4);
-      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-      const rawData = atob(base64);
-      const outputArray = new Uint8Array(rawData.length);
-      for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
-      return outputArray;
+    function base64UrlToUint8Array(base64Url) {
+      const padding = '='.repeat((4 - (base64Url.length % 4)) % 4);
+      const base64 = (base64Url + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const raw = atob(base64);
+      const out = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+      return out;
     }
 
-    async function registerSW() {
+    async function fetchJSON(url) {
+      const res = await fetch(url, { method: 'GET', mode: 'cors', cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    }
+
+    async function postJSON(url, body) {
+      const res = await fetch(url, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json().catch(() => ({}));
+    }
+
+    async function subscribePush() {
+      setStatus('');
+
+      // Push対応チェック（ここを抜くと iPhoneで reg.pushManager が undefined で死ぬ）
       if (!('serviceWorker' in navigator)) {
         setStatus('このブラウザは Service Worker 非対応');
-        return null;
+        return;
       }
-      const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
-      return await navigator.serviceWorker.ready;
-    }
+      if (!('PushManager' in window)) {
+        setStatus('この環境は Push 非対応（iPhoneはホーム画面追加で動く）');
+        return;
+      }
+      if (!('Notification' in window)) {
+        setStatus('この環境は通知API非対応');
+        return;
+      }
 
-    async function fetchVapidPublicKey() {
-      const res = await fetch(`${PUSH_API_BASE}/vapid`, { cache: 'no-store' });
-      if (!res.ok) throw new Error('vapid取得に失敗');
-      const data = await res.json();
-      if (!data.publicKey) throw new Error('VAPID publicKey が空');
-      return data.publicKey;
-    }
-
-    function isIOSStandalone() {
-      return (window.navigator.standalone === true);
-    }
-
-    async function initPushUI() {
-      // iOSは「ホーム画面から起動」じゃないとPushが出ない（環境によっては PushManager 自体が無い）  [oai_citation:1‡Batch Documentation](https://doc.batch.com/developer/technical-guides/how-to-guides/web/how-to-integrate-batchs-snippet-using-google-tag-manager/how-do-i-enable-ios-web-push-notifications-on-my-pwa-website?utm_source=chatgpt.com)
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-
+      // SW準備
       const reg = await registerSW();
-      if (!reg) return;
-
-      // Push API 対応チェック（ここが無いと、お前のスクショのエラーになる）  [oai_citation:2‡GitHub](https://github.com/mdn/browser-compat-data/issues/16641?utm_source=chatgpt.com)
-      if (!('Notification' in window) || !('PushManager' in window) || !reg.pushManager) {
-        if (isIOS && !isIOSStandalone()) {
-          setStatus('iPhoneは「共有 → ホーム画面に追加」したアプリから起動しないと通知が使えない');
-        } else {
-          setStatus('この環境は Push 通知に対応してない');
-        }
+      const ready = await navigator.serviceWorker.ready.catch(() => null);
+      const swReg = ready || reg;
+      if (!swReg || !swReg.pushManager) {
+        setStatus('Service Worker が準備できてない（入れ直しが必要かも）');
         return;
       }
 
-      // 既存購読チェック
-      const existing = await reg.pushManager.getSubscription();
-      if (existing) {
-        setStatus('通知は既に有効です ✅', false);
-        pushBtn.textContent = '✅ 通知は有効';
-        pushBtn.disabled = true;
+      // 許可
+      let perm = Notification.permission;
+      if (perm !== 'granted') {
+        perm = await Notification.requestPermission();
+      }
+      if (perm !== 'granted') {
+        setStatus('通知が許可されてない');
         return;
       }
 
-      setStatus('通知はまだ無効です（ボタンで有効化）', true);
+      // VAPID公開鍵をAPIから取得（ここがCORS/URLミスだと "Load failed" になる）
+      let vapid;
+      try {
+        vapid = await fetchJSON(`${PUSH_API_BASE}/vapid`);
+      } catch (e) {
+        setStatus('Load failed（/vapid 取得失敗: PUSH_API_BASEかCORSが原因）');
+        return;
+      }
 
-      pushBtn.addEventListener('click', async () => {
+      const publicKey = vapid.publicKey || vapid.public_key || vapid.key;
+      if (!publicKey) {
+        setStatus('APIが公開鍵を返してない（/vapidのJSON形式が違う）');
+        return;
+      }
+
+      // 既存購読があれば再利用
+      let sub = await swReg.pushManager.getSubscription();
+      if (!sub) {
+        const appServerKey = base64UrlToUint8Array(publicKey);
         try {
-          setStatus('処理中...', false);
-
-          const perm = await Notification.requestPermission();
-          if (perm !== 'granted') {
-            setStatus('通知が許可されていない（iPhone設定でも確認して）');
-            return;
-          }
-
-          const publicKey = await fetchVapidPublicKey();
-          const appServerKey = urlBase64ToUint8Array(publicKey);
-
-          const sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: appServerKey
-          });
-
-          // サーバへ保存
-          const save = await fetch(`${PUSH_API_BASE}/subscribe`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              subscription: sub,
-              ua: navigator.userAgent,
-              createdAt: Date.now()
-            })
-          });
-
-          if (!save.ok) throw new Error('購読の保存に失敗');
-
-          setStatus('通知を有効化しました ✅', false);
-          pushBtn.textContent = '✅ 通知は有効';
-          pushBtn.disabled = true;
-
-        } catch (err) {
-          setStatus(String(err && err.message ? err.message : err));
+          sub = await swReg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appServerKey });
+        } catch {
+          setStatus('購読に失敗（iPhoneはホーム画面追加で開いてる？）');
+          return;
         }
-      });
+      }
+
+      // サーバに登録
+      try {
+        await postJSON(`${PUSH_API_BASE}/subscribe`, { subscription: sub });
+      } catch {
+        setStatus('Load failed（/subscribe 登録失敗: CORS/URL/サーバ側エラー）');
+        return;
+      }
+
+      setStatus('通知の登録OK', true);
     }
 
-    /**********************
-     * 初期化
-     **********************/
+    pushBtn.addEventListener('click', () => {
+      subscribePush().catch(() => setStatus('Load failed'));
+    });
+
+    // 初期化
     document.addEventListener('DOMContentLoaded', () => {
       renderCalendar();
-      initPushUI();
+      registerSW();
+      if (!PUSH_API_BASE) setStatus('PUSH_API_BASE を設定して');
     });
   </script>
 </body>
