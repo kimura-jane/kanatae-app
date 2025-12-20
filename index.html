@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>おにぎり屋かなたけ</title>
-  
+
   <meta name="description" content="おにぎり屋かなたけの出店スケジュール・マップ・クーポン">
   <meta name="theme-color" content="#f5a623">
-  
+
   <!-- PWA -->
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="onigiriya_kanatake_192.png">
-  
+
   <!-- OGP -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="おにぎり屋かなたけ">
@@ -19,18 +19,15 @@
   <meta property="og:description" content="出店スケジュール・マップ・クーポン">
   <meta property="og:image" content="onigiriya_kanatake_512.png">
 
-  // Service Worker登録（安全版）
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js', { scope: './' });
-}
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-  
+
   <link rel="stylesheet" href="style.css">
   <script src="spots.js" defer></script>
   <script src="spots-all.js" defer></script>
 </head>
+
 <body>
   <div class="app">
     <header class="header">
@@ -39,14 +36,14 @@ if ('serviceWorker' in navigator) {
         おにぎり屋かなたけ
       </h1>
     </header>
-    
+
     <nav class="tab-nav">
       <button class="tab-btn active" data-tab="calendar">📅 カレンダー</button>
       <button class="tab-btn" data-tab="map">📍 マップ</button>
       <button class="tab-btn" data-tab="menu">🍙 メニュー</button>
       <button class="tab-btn" data-tab="coupon">🎫 クーポン</button>
     </nav>
-    
+
     <main class="tab-content">
       <!-- カレンダータブ -->
       <section class="tab-pane active" id="calendar">
@@ -59,7 +56,7 @@ if ('serviceWorker' in navigator) {
           <div class="calendar-grid" id="calendarGrid"></div>
         </div>
       </section>
-      
+
       <!-- マップタブ -->
       <section class="tab-pane" id="map-pane">
         <div id="map"></div>
@@ -68,64 +65,91 @@ if ('serviceWorker' in navigator) {
           <ol class="spot-list" id="spotList"></ol>
         </section>
       </section>
-      
+
       <!-- メニュータブ -->
       <section class="tab-pane" id="menu">
         <div class="menu-container">
           <img src="IMG_7605.jpeg" alt="おにぎり屋かなたけ メニュー" class="menu-image">
         </div>
       </section>
-      
+
       <!-- クーポンタブ -->
       <section class="tab-pane" id="coupon">
         <div class="coupon">
           <img src="icon.png" alt="かなたけ" class="coupon-icon">
           <h2 class="coupon-title">スマイルクーポン</h2>
           <p class="coupon-desc">この画面を店主に見せてね</p>
+
           <div class="coupon-card">
             <p class="coupon-label">特典</p>
             <p class="coupon-value">😊 店主の笑顔</p>
           </div>
+
           <p class="coupon-note">※ 何度でも使えます</p>
+
+          <!-- ▼ 通知UI（追加） -->
+          <div style="margin-top:14px;">
+            <button id="pushEnableBtn" class="modal-btn" type="button">🔔 通知を受け取る</button>
+            <button id="pushDisableBtn" class="modal-btn modal-close" type="button" style="display:none;">🔕 通知を解除</button>
+            <p id="pushStatus" style="margin-top:10px; font-size:14px; opacity:.85;"></p>
+          </div>
+          <!-- ▲ 通知UI（追加） -->
         </div>
       </section>
     </main>
   </div>
-  
+
   <!-- イベント詳細モーダル -->
   <div class="modal-overlay" id="modal">
     <div class="modal">
       <p class="modal-date" id="modalDate"></p>
       <h3 class="modal-title" id="modalTitle"></h3>
       <p class="modal-time" id="modalTime"></p>
-      <a class="modal-btn" id="modalMap" href="#" target="_blank">Googleマップで開く</a>
+      <a class="modal-btn" id="modalMap" href="#" target="_blank" rel="noopener">Googleマップで開く</a>
       <button class="modal-btn modal-close" id="modalClose">閉じる</button>
     </div>
   </div>
-  
+
   <script>
-    // タブ切り替え
+    // =========================
+    // 設定（お前が合わせる所）
+    // =========================
+
+    // Cloudflare Worker のベースURL（お前のやつ）
+    const PUSH_API_BASE = 'https://kanatae-push.la-kofu.workers.dev';
+
+    // VAPID公開鍵（Base64URL文字列）※ここは絶対に必要
+    // 例: "BEl...（長い文字列）...Q"
+    const VAPID_PUBLIC_KEY = 'PUT_YOUR_VAPID_PUBLIC_KEY_HERE';
+
+    // 通知の対象（必要なら後で好きに）
+    const DEFAULT_HOUR = 21;      // 21時通知（例）
+    const DEFAULT_PLACES = [];    // 例: ["蕨市役所","立教大学"]
+
+    // =========================
+    // 既存：タブ切り替え
+    // =========================
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabPanes = document.querySelectorAll('.tab-pane');
     let mapInitialized = false;
     let mapInstance = null;
     let markersArray = [];
-    
+
     tabBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const tabId = btn.dataset.tab;
-        
+
         tabBtns.forEach(b => b.classList.remove('active'));
         tabPanes.forEach(p => p.classList.remove('active'));
-        
+
         btn.classList.add('active');
-        
+
         if (tabId === 'map') {
           document.getElementById('map-pane').classList.add('active');
         } else {
           document.getElementById(tabId).classList.add('active');
         }
-        
+
         if (tabId === 'map' && !mapInitialized) {
           initMap();
           mapInitialized = true;
@@ -135,15 +159,16 @@ if ('serviceWorker' in navigator) {
         }
       });
     });
-    
-    // カレンダー（spots-all.js を使用）
+
+    // =========================
+    // 既存：カレンダー（spots-all.js）
+    // =========================
     let currentYear = 2025;
     let currentMonth = 12;
-    
+
     function getEventsForMonth(year, month) {
       const spots = window.spotsAll || [];
       const events = {};
-      
       spots.forEach(spot => {
         const match = spot.date.match(/(\d+)\/(\d+)/);
         if (match) {
@@ -155,10 +180,9 @@ if ('serviceWorker' in navigator) {
           }
         }
       });
-      
       return events;
     }
-    
+
     function getShortName(name) {
       const shortcuts = {
         '川口さくら病院': 'さくら病院',
@@ -206,48 +230,45 @@ if ('serviceWorker' in navigator) {
       };
       return shortcuts[name] || name.substring(0, 6);
     }
-    
+
     function renderCalendar() {
       const title = document.getElementById('calendarTitle');
       const grid = document.getElementById('calendarGrid');
-      
+
       title.textContent = `${currentYear}年${currentMonth}月`;
-      
+
       const firstDay = new Date(currentYear, currentMonth - 1, 1);
       const lastDay = new Date(currentYear, currentMonth, 0);
       const daysInMonth = lastDay.getDate();
       const startDow = firstDay.getDay();
-      
+
       const events = getEventsForMonth(currentYear, currentMonth);
       const today = new Date();
       const isCurrentMonth = today.getFullYear() === currentYear && today.getMonth() + 1 === currentMonth;
       const todayDate = today.getDate();
-      
-      let html = ['日','月','火','水','木','金','土']
-        .map(d => `<div class="calendar-dow">${d}</div>`).join('');
-      
-      for (let i = 0; i < startDow; i++) {
-        html += '<div class="calendar-day empty"></div>';
-      }
-      
+
+      let html = ['日','月','火','水','木','金','土'].map(d => `<div class="calendar-dow">${d}</div>`).join('');
+
+      for (let i = 0; i < startDow; i++) html += '<div class="calendar-day empty"></div>';
+
       for (let d = 1; d <= daysInMonth; d++) {
         const hasEvent = events[d] && events[d].length > 0;
         const isToday = isCurrentMonth && d === todayDate;
-        
+
         let classes = 'calendar-day';
         if (hasEvent) classes += ' has-event';
         if (isToday) classes += ' today';
-        
+
         const placeName = hasEvent ? `<div class="calendar-place">${getShortName(events[d][0].name)}</div>` : '';
-        
+
         html += `<div class="${classes}" data-day="${d}">
           <span class="calendar-date">${d}</span>
           ${placeName}
         </div>`;
       }
-      
+
       grid.innerHTML = html;
-      
+
       grid.querySelectorAll('.calendar-day.has-event').forEach(el => {
         el.addEventListener('click', () => {
           const day = parseInt(el.dataset.day);
@@ -255,15 +276,15 @@ if ('serviceWorker' in navigator) {
         });
       });
     }
-    
+
     function showEventModal(day, eventList) {
       const modal = document.getElementById('modal');
       const event = eventList[0];
-      
+
       document.getElementById('modalDate').textContent = `${currentMonth}月${day}日`;
       document.getElementById('modalTitle').textContent = event.name;
       document.getElementById('modalTime').textContent = event.time || '時間未定';
-      
+
       const mapLink = document.getElementById('modalMap');
       if (event.lat && event.lng) {
         mapLink.href = `https://www.google.com/maps?q=${event.lat},${event.lng}`;
@@ -271,64 +292,60 @@ if ('serviceWorker' in navigator) {
       } else {
         mapLink.style.display = 'none';
       }
-      
+
       modal.classList.add('active');
     }
-    
+
     document.getElementById('modal').addEventListener('click', e => {
       if (e.target.id === 'modal' || e.target.id === 'modalClose') {
         document.getElementById('modal').classList.remove('active');
       }
     });
-    
+
     document.getElementById('prevMonth').addEventListener('click', () => {
       currentMonth--;
-      if (currentMonth < 1) {
-        currentMonth = 12;
-        currentYear--;
-      }
+      if (currentMonth < 1) { currentMonth = 12; currentYear--; }
       renderCalendar();
     });
-    
+
     document.getElementById('nextMonth').addEventListener('click', () => {
       currentMonth++;
-      if (currentMonth > 12) {
-        currentMonth = 1;
-        currentYear++;
-      }
+      if (currentMonth > 12) { currentMonth = 1; currentYear++; }
       renderCalendar();
     });
-    
-    // マップ（spots.js を使用 = 今月のみ）
+
+    // =========================
+    // 既存：マップ（spots.js）
+    // =========================
     function initMap() {
       mapInstance = L.map('map').setView([35.75, 139.75], 10);
-      
+
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '© OSM © CARTO'
       }).addTo(mapInstance);
-      
+
       const icon = L.icon({
         iconUrl: 'icon.png',
         iconSize: [44, 44],
         iconAnchor: [22, 32],
         popupAnchor: [0, -28]
       });
-      
+
       const spots = window.spots || [];
       const list = document.getElementById('spotList');
-      
+      list.innerHTML = '';
+
       spots.forEach((s, i) => {
         if (s.lat && s.lng) {
           const m = L.marker([s.lat, s.lng], { icon })
             .addTo(mapInstance)
             .bindPopup(
               `<strong>${s.name}</strong><br>${s.date}${s.time ? ' ・ ' + s.time : ''}<br>` +
-              `<a href="https://www.google.com/maps?q=${s.lat},${s.lng}" target="_blank">Googleマップで開く</a>`
+              `<a href="https://www.google.com/maps?q=${s.lat},${s.lng}" target="_blank" rel="noopener">Googleマップで開く</a>`
             );
           markersArray[i] = m;
         }
-        
-        // 右下リスト
+
         const li = document.createElement('li');
         li.innerHTML = `<span class="spot-name">${s.name}</span> <span class="badge">${s.date}</span>`;
         li.addEventListener('click', () => {
@@ -339,20 +356,150 @@ if ('serviceWorker' in navigator) {
         });
         list.appendChild(li);
       });
-      
+
       const existing = markersArray.filter(Boolean);
       if (existing.length) {
         mapInstance.fitBounds(L.featureGroup(existing).getBounds().pad(0.15));
       }
     }
-    
-    // Service Worker登録
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
+
+    // =========================
+    // 追加：通知（Push購読）
+    // =========================
+    const pushEnableBtn  = document.getElementById('pushEnableBtn');
+    const pushDisableBtn = document.getElementById('pushDisableBtn');
+    const pushStatus     = document.getElementById('pushStatus');
+
+    function setPushUiState({ enabled, message }) {
+      pushStatus.textContent = message || '';
+      pushEnableBtn.style.display  = enabled ? 'none' : 'block';
+      pushDisableBtn.style.display = enabled ? 'block' : 'none';
     }
-    
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+      return outputArray;
+    }
+
+    async function ensureServiceWorkerReady() {
+      if (!('serviceWorker' in navigator)) throw new Error('このブラウザはService Worker非対応');
+      const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+      await navigator.serviceWorker.ready;
+      return reg;
+    }
+
+    async function getExistingSubscription(reg) {
+      const sub = await reg.pushManager.getSubscription();
+      return sub;
+    }
+
+    async function upsertSubscriptionToServer(sub) {
+      const body = {
+        endpoint: sub.endpoint,
+        subscription: sub.toJSON(),
+        places: DEFAULT_PLACES,
+        hour: DEFAULT_HOUR
+      };
+
+      const res = await fetch(`${PUSH_API_BASE}/subs/upsert`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const t = await res.text().catch(() => '');
+        throw new Error(`サーバ登録失敗: ${res.status} ${t}`);
+      }
+      return await res.json().catch(() => ({}));
+    }
+
+    async function removeSubscriptionFromServer(sub) {
+      const body = { endpoint: sub.endpoint };
+      const res = await fetch(`${PUSH_API_BASE}/subs/remove`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      // 失敗しても解除は続ける（最悪サーバ側にゴミが残るだけ）
+      return res.ok;
+    }
+
+    async function enablePush() {
+      if (VAPID_PUBLIC_KEY === 'PUT_YOUR_VAPID_PUBLIC_KEY_HERE') {
+        throw new Error('VAPID_PUBLIC_KEY が未設定');
+      }
+
+      const reg = await ensureServiceWorkerReady();
+
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') {
+        throw new Error('通知が許可されなかった');
+      }
+
+      let sub = await getExistingSubscription(reg);
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        });
+      }
+
+      await upsertSubscriptionToServer(sub);
+      setPushUiState({ enabled: true, message: '✅ 通知を有効化しました' });
+    }
+
+    async function disablePush() {
+      const reg = await ensureServiceWorkerReady();
+      const sub = await getExistingSubscription(reg);
+      if (!sub) {
+        setPushUiState({ enabled: false, message: 'すでに解除済みです' });
+        return;
+      }
+
+      await removeSubscriptionFromServer(sub);
+      await sub.unsubscribe();
+      setPushUiState({ enabled: false, message: '🔕 通知を解除しました' });
+    }
+
+    pushEnableBtn.addEventListener('click', async () => {
+      try {
+        setPushUiState({ enabled: false, message: '処理中…' });
+        await enablePush();
+      } catch (e) {
+        setPushUiState({ enabled: false, message: `❌ ${e?.message || e}` });
+      }
+    });
+
+    pushDisableBtn.addEventListener('click', async () => {
+      try {
+        setPushUiState({ enabled: true, message: '処理中…' });
+        await disablePush();
+      } catch (e) {
+        setPushUiState({ enabled: true, message: `❌ ${e?.message || e}` });
+      }
+    });
+
+    async function refreshPushUi() {
+      try {
+        const reg = await ensureServiceWorkerReady();
+        const sub = await getExistingSubscription(reg);
+        if (sub) setPushUiState({ enabled: true, message: '✅ 通知は有効です' });
+        else setPushUiState({ enabled: false, message: '通知はオフです（ボタンでオン）' });
+      } catch (e) {
+        setPushUiState({ enabled: false, message: `❌ ${e?.message || e}` });
+      }
+    }
+
     // 初期化
-    document.addEventListener('DOMContentLoaded', renderCalendar);
+    document.addEventListener('DOMContentLoaded', () => {
+      renderCalendar();
+      refreshPushUi();
+    });
   </script>
 </body>
 </html>
