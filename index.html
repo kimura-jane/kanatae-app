@@ -8,31 +8,35 @@
   <meta name="description" content="おにぎり屋かなたけの出店スケジュール・マップ・クーポン">
   <meta name="theme-color" content="#f5a623">
 
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
   <!-- PWA -->
-  <link rel="manifest" href="./manifest.json">
-  <link rel="apple-touch-icon" href="./onigiriya_kanatake_192.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="onigiriya_kanatake_192.png">
 
   <!-- OGP -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="おにぎり屋かなたけ">
   <meta property="og:title" content="おにぎり屋かなたけ">
   <meta property="og:description" content="出店スケジュール・マップ・クーポン">
-  <meta property="og:image" content="./onigiriya_kanatake_512.png">
+  <meta property="og:image" content="onigiriya_kanatake_512.png">
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 
-  <link rel="stylesheet" href="./style.css">
-  <script src="./spots.js" defer></script>
-  <script src="./spots-all.js" defer></script>
+  <link rel="stylesheet" href="style.css">
+  <script src="spots.js" defer></script>
+  <script src="spots-all.js" defer></script>
 </head>
 
 <body>
   <div class="app">
     <header class="header">
       <h1>
-        <img src="./icon.png" alt="" class="header-icon">
+        <img src="icon.png" alt="" class="header-icon">
         おにぎり屋かなたけ
       </h1>
     </header>
@@ -69,14 +73,14 @@
       <!-- メニュータブ -->
       <section class="tab-pane" id="menu">
         <div class="menu-container">
-          <img src="./IMG_7605.jpeg" alt="おにぎり屋かなたけ メニュー" class="menu-image">
+          <img src="IMG_7605.jpeg" alt="おにぎり屋かなたけ メニュー" class="menu-image">
         </div>
       </section>
 
       <!-- クーポンタブ -->
       <section class="tab-pane" id="coupon">
         <div class="coupon">
-          <img src="./icon.png" alt="かなたけ" class="coupon-icon">
+          <img src="icon.png" alt="かなたけ" class="coupon-icon">
           <h2 class="coupon-title">スマイルクーポン</h2>
           <p class="coupon-desc">この画面を店主に見せてね</p>
 
@@ -84,15 +88,11 @@
             <p class="coupon-label">特典</p>
             <p class="coupon-value">😊 店主の笑顔</p>
           </div>
+
           <p class="coupon-note">※ 何度でも使えます</p>
 
-          <!-- Push通知 -->
-          <div style="margin-top:16px; text-align:center;">
-            <button id="pushBtn" class="modal-btn" style="display:inline-flex; align-items:center; gap:8px;">
-              🔔 通知を受け取る
-            </button>
-            <div id="pushStatus" style="margin-top:10px; font-size:14px; color:#b00020;"></div>
-          </div>
+          <button id="pushBtn" class="modal-btn" type="button">🔔 通知を受け取る</button>
+          <p id="pushStatus" style="margin-top:10px; color:#c00; font-weight:700;"></p>
         </div>
       </section>
     </main>
@@ -104,25 +104,21 @@
       <p class="modal-date" id="modalDate"></p>
       <h3 class="modal-title" id="modalTitle"></h3>
       <p class="modal-time" id="modalTime"></p>
-      <a class="modal-btn" id="modalMap" href="#" target="_blank" rel="noopener">Googleマップで開く</a>
+      <a class="modal-btn" id="modalMap" href="#" target="_blank">Googleマップで開く</a>
       <button class="modal-btn modal-close" id="modalClose">閉じる</button>
     </div>
   </div>
 
   <script>
-    // =========================
-    // 設定（ここだけ確認）
-    // =========================
-    // Cloudflare Worker のURL（スクショの workers.dev を入れる）
+    /**********************
+     * ここだけ確認して
+     **********************/
+    // Cloudflare Workers の Push API（お前の worker URL）
     const PUSH_API_BASE = 'https://kanatae-push.la-kofu.workers.dev';
 
-    // 使うAPIパス（お前が作った functions/api/ と揃える）
-    const API_VAPID = '/api/vapid';
-    const API_SUBSCRIBE = '/api/subscribe';
-
-    // =========================
-    // タブ切り替え
-    // =========================
+    /**********************
+     * タブ切り替え
+     **********************/
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabPanes = document.querySelectorAll('.tab-pane');
     let mapInitialized = false;
@@ -154,9 +150,9 @@
       });
     });
 
-    // =========================
-    // カレンダー（spots-all.js）
-    // =========================
+    /**********************
+     * カレンダー（spots-all.js）
+     **********************/
     let currentYear = 2025;
     let currentMonth = 12;
 
@@ -224,7 +220,7 @@
         '上野恩賜公園': '上野公園',
         '国立代々木競技場 第二体育館': '代々木'
       };
-      return shortcuts[name] || (name ? name.substring(0, 6) : '');
+      return shortcuts[name] || String(name || '').substring(0, 6);
     }
 
     function renderCalendar() {
@@ -278,14 +274,14 @@
 
     function showEventModal(day, eventList) {
       const modal = document.getElementById('modal');
-      const event = (eventList && eventList[0]) ? eventList[0] : null;
+      const event = eventList[0];
 
       document.getElementById('modalDate').textContent = `${currentMonth}月${day}日`;
-      document.getElementById('modalTitle').textContent = event ? event.name : '';
-      document.getElementById('modalTime').textContent = (event && event.time) ? event.time : '時間未定';
+      document.getElementById('modalTitle').textContent = event.name;
+      document.getElementById('modalTime').textContent = event.time || '時間未定';
 
       const mapLink = document.getElementById('modalMap');
-      if (event && event.lat && event.lng) {
+      if (event.lat && event.lng) {
         mapLink.href = `https://www.google.com/maps?q=${event.lat},${event.lng}`;
         mapLink.style.display = 'block';
       } else {
@@ -303,25 +299,19 @@
 
     document.getElementById('prevMonth').addEventListener('click', () => {
       currentMonth--;
-      if (currentMonth < 1) {
-        currentMonth = 12;
-        currentYear--;
-      }
+      if (currentMonth < 1) { currentMonth = 12; currentYear--; }
       renderCalendar();
     });
 
     document.getElementById('nextMonth').addEventListener('click', () => {
       currentMonth++;
-      if (currentMonth > 12) {
-        currentMonth = 1;
-        currentYear++;
-      }
+      if (currentMonth > 12) { currentMonth = 1; currentYear++; }
       renderCalendar();
     });
 
-    // =========================
-    // マップ（spots.js = 今月のみ）
-    // =========================
+    /**********************
+     * マップ（spots.js = 今月のみ）
+     **********************/
     function initMap() {
       mapInstance = L.map('map').setView([35.75, 139.75], 10);
 
@@ -330,7 +320,7 @@
       }).addTo(mapInstance);
 
       const icon = L.icon({
-        iconUrl: './icon.png',
+        iconUrl: 'icon.png',
         iconSize: [44, 44],
         iconAnchor: [22, 32],
         popupAnchor: [0, -28]
@@ -339,6 +329,7 @@
       const spots = window.spots || [];
       const list = document.getElementById('spotList');
       list.innerHTML = '';
+      markersArray = [];
 
       spots.forEach((s, i) => {
         if (s.lat && s.lng) {
@@ -368,23 +359,23 @@
       }
     }
 
-    // =========================
-    // Push 通知（iOS/対応チェック厳密版）
-    // =========================
+    /**********************
+     * Push 通知（安全に判定してから）
+     **********************/
     const pushBtn = document.getElementById('pushBtn');
     const pushStatus = document.getElementById('pushStatus');
 
     function setStatus(msg, isError = true) {
-      pushStatus.textContent = msg || '';
-      pushStatus.style.color = isError ? '#b00020' : '#2e7d32';
+      pushStatus.style.color = isError ? '#c00' : '#0a7a2f';
+      pushStatus.textContent = msg;
     }
 
     function urlBase64ToUint8Array(base64String) {
-      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
       const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-      const raw = atob(base64);
-      const outputArray = new Uint8Array(raw.length);
-      for (let i = 0; i < raw.length; ++i) outputArray[i] = raw.charCodeAt(i);
+      const rawData = atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
       return outputArray;
     }
 
@@ -393,105 +384,97 @@
         setStatus('このブラウザは Service Worker 非対応');
         return null;
       }
-      try {
-        const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
-        return reg;
-      } catch (e) {
-        setStatus('Service Worker 登録に失敗: ' + (e && e.message ? e.message : e));
-        return null;
-      }
+      const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+      return await navigator.serviceWorker.ready;
     }
 
-    async function getVapidPublicKey() {
-      if (!PUSH_API_BASE) throw new Error('PUSH_API_BASE が未設定');
-      const url = PUSH_API_BASE.replace(/\/$/, '') + API_VAPID;
-      const res = await fetch(url, { method: 'GET', mode: 'cors' });
-      if (!res.ok) throw new Error('VAPID取得失敗: ' + res.status);
+    async function fetchVapidPublicKey() {
+      const res = await fetch(`${PUSH_API_BASE}/vapid`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('vapid取得に失敗');
       const data = await res.json();
-      // { publicKey: "..." } か "..." どっちでも耐える
-      return (typeof data === 'string') ? data : (data.publicKey || data.vapidPublicKey || '');
+      if (!data.publicKey) throw new Error('VAPID publicKey が空');
+      return data.publicKey;
     }
 
-    async function postSubscription(sub) {
-      const url = PUSH_API_BASE.replace(/\/$/, '') + API_SUBSCRIBE;
-      const res = await fetch(url, {
-        method: 'POST',
-        mode: 'cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sub)
-      });
-      if (!res.ok) throw new Error('購読保存失敗: ' + res.status);
-      return res.json().catch(() => ({}));
+    function isIOSStandalone() {
+      return (window.navigator.standalone === true);
     }
 
-    async function ensurePushReady(reg) {
-      // iOSや一部ブラウザでは pushManager 自体が無い
-      if (!reg || !reg.pushManager || typeof reg.pushManager.subscribe !== 'function') {
-        setStatus('この端末/ブラウザはPush通知に未対応（iOSは「ホーム画面に追加」＋対応OSが必要）');
-        return false;
-      }
-      if (!('Notification' in window)) {
-        setStatus('Notification API 非対応');
-        return false;
-      }
-      // HTTPS/localhost必須（Pages/WorkersならOK）
-      if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-        setStatus('HTTPSで開いてください');
-        return false;
-      }
-      return true;
-    }
-
-    async function subscribePush() {
-      setStatus('');
+    async function initPushUI() {
+      // iOSは「ホーム画面から起動」じゃないとPushが出ない（環境によっては PushManager 自体が無い）  [oai_citation:1‡Batch Documentation](https://doc.batch.com/developer/technical-guides/how-to-guides/web/how-to-integrate-batchs-snippet-using-google-tag-manager/how-do-i-enable-ios-web-push-notifications-on-my-pwa-website?utm_source=chatgpt.com)
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
       const reg = await registerSW();
-      if (!await ensurePushReady(reg)) return;
+      if (!reg) return;
 
-      // 権限
-      let perm = Notification.permission;
-      if (perm === 'default') {
-        perm = await Notification.requestPermission();
-      }
-      if (perm !== 'granted') {
-        setStatus('通知が許可されていません（端末設定で許可して）');
+      // Push API 対応チェック（ここが無いと、お前のスクショのエラーになる）  [oai_citation:2‡GitHub](https://github.com/mdn/browser-compat-data/issues/16641?utm_source=chatgpt.com)
+      if (!('Notification' in window) || !('PushManager' in window) || !reg.pushManager) {
+        if (isIOS && !isIOSStandalone()) {
+          setStatus('iPhoneは「共有 → ホーム画面に追加」したアプリから起動しないと通知が使えない');
+        } else {
+          setStatus('この環境は Push 通知に対応してない');
+        }
         return;
       }
 
-      // 既存購読があるか
+      // 既存購読チェック
       const existing = await reg.pushManager.getSubscription();
       if (existing) {
-        setStatus('すでに通知は登録済み', false);
+        setStatus('通知は既に有効です ✅', false);
+        pushBtn.textContent = '✅ 通知は有効';
+        pushBtn.disabled = true;
         return;
       }
 
-      // VAPID公開鍵取得→購読
-      const publicKey = await getVapidPublicKey();
-      if (!publicKey) {
-        setStatus('VAPID公開鍵が取得できない（API側の /api/vapid を確認）');
-        return;
-      }
+      setStatus('通知はまだ無効です（ボタンで有効化）', true);
 
-      const applicationServerKey = urlBase64ToUint8Array(publicKey);
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey
+      pushBtn.addEventListener('click', async () => {
+        try {
+          setStatus('処理中...', false);
+
+          const perm = await Notification.requestPermission();
+          if (perm !== 'granted') {
+            setStatus('通知が許可されていない（iPhone設定でも確認して）');
+            return;
+          }
+
+          const publicKey = await fetchVapidPublicKey();
+          const appServerKey = urlBase64ToUint8Array(publicKey);
+
+          const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: appServerKey
+          });
+
+          // サーバへ保存
+          const save = await fetch(`${PUSH_API_BASE}/subscribe`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              subscription: sub,
+              ua: navigator.userAgent,
+              createdAt: Date.now()
+            })
+          });
+
+          if (!save.ok) throw new Error('購読の保存に失敗');
+
+          setStatus('通知を有効化しました ✅', false);
+          pushBtn.textContent = '✅ 通知は有効';
+          pushBtn.disabled = true;
+
+        } catch (err) {
+          setStatus(String(err && err.message ? err.message : err));
+        }
       });
-
-      // サーバに保存
-      await postSubscription(sub);
-      setStatus('通知登録できた', false);
     }
 
-    pushBtn.addEventListener('click', () => {
-      subscribePush().catch(err => setStatus(err && err.message ? err.message : String(err)));
-    });
-
-    // 初期化
+    /**********************
+     * 初期化
+     **********************/
     document.addEventListener('DOMContentLoaded', () => {
       renderCalendar();
-      // SWは先に登録しておく（Pushボタン押す前の準備）
-      registerSW();
+      initPushUI();
     });
   </script>
 </body>
