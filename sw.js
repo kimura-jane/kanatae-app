@@ -1,54 +1,57 @@
-const CACHE_NAME = 'kanatake-v6';
-const urlsToCache = [
-  '/kanatae-app/',
-  '/kanatae-app/index.html',
-  '/kanatae-app/style.css',
-  '/kanatae-app/spots.js',
-  '/kanatae-app/spots-all.js',
-  '/kanatae-app/icon.png',
-  '/kanatae-app/onigiriya_kanatake_192.png',
-  '/kanatae-app/onigiriya_kanatake_512.png',
-  '/kanatae-app/IMG_7605.jpeg',
-  '/kanatae-app/1.png',
-  '/kanatae-app/2.png',
-  '/kanatae-app/3.png',
-  '/kanatae-app/4.png'
+const CACHE_NAME = 'kanatake-v7';
+const ASSETS = [
+  './',
+  './index.html',
+  './style.css',
+  './manifest.json',
+  './spots.js',
+  './spots-all.js',
+  './icon.png',
+  './onigiriya_kanatake_192.png',
+  './onigiriya_kanatake_512.png',
+  './IMG_7605.jpeg',
+  './1.png',
+  './2.png',
+  './3.png',
+  './4.png'
 ];
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
-  );
-  self.skipWaiting();
+self.addEventListener('install', (event) => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(ASSETS);
+    await self.skipWaiting();
+  })());
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil((async () => {
+self.addEventListener('activate', (event) => {
+  event.waitUntil((async () => {
     const keys = await caches.keys();
     await Promise.all(keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : Promise.resolve())));
     await self.clients.claim();
   })());
 });
 
-self.addEventListener('fetch', (e) => {
-  const req = e.request;
+// キャッシュ戦略：同一オリジンGETは「キャッシュ優先→なければ取得→保存」
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
   const url = new URL(req.url);
 
-  // 同一オリジンのGETだけ
-  if (req.method !== 'GET' || url.origin !== self.location.origin) return;
+  if (req.method !== 'GET') return;
+  if (url.origin !== self.location.origin) return;
 
-  e.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req).then((res) => {
-        if (res && res.ok) {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
-        }
-        return res;
-      });
-    })
-  );
+  event.respondWith((async () => {
+    const cached = await caches.match(req);
+    if (cached) return cached;
+
+    const res = await fetch(req);
+    if (res && res.ok) {
+      const copy = res.clone();
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(req, copy);
+    }
+    return res;
+  })());
 });
 
 // ===== Push通知 =====
@@ -56,18 +59,18 @@ self.addEventListener('push', (event) => {
   let data = {};
   try {
     data = event.data ? event.data.json() : {};
-  } catch {
+  } catch (e) {
     data = { body: event.data ? event.data.text() : '' };
   }
 
   const title = data.title || 'おにぎり屋かなたけ';
   const body = data.body || 'お知らせです';
-  const targetUrl = data.url || '/kanatae-app/';
+  const targetUrl = data.url || './';
 
   const options = {
     body,
-    icon: '/kanatae-app/onigiriya_kanatake_192.png',
-    badge: '/kanatae-app/onigiriya_kanatake_192.png',
+    icon: './onigiriya_kanatake_192.png',
+    badge: './onigiriya_kanatake_192.png',
     data: { url: targetUrl }
   };
 
@@ -76,13 +79,16 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) ? event.notification.data.url : '/kanatae-app/';
+  const target = (event.notification.data && event.notification.data.url) ? event.notification.data.url : './';
 
   event.waitUntil((async () => {
     const allClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const c of allClients) {
-      if (c.url.includes('/kanatae-app/') && 'focus' in c) return c.focus();
+      // 同じスコープ内のタブがあればフォーカス
+      if (c.url && c.url.includes('/kanatae-app/') && 'focus' in c) {
+        return c.focus();
+      }
     }
-    if (clients.openWindow) return clients.openWindow(url);
+    if (clients.openWindow) return clients.openWindow(target);
   })());
 });
