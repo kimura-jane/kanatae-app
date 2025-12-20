@@ -1,66 +1,88 @@
 const CACHE_NAME = 'kanatake-v6';
-
-const CORE_ASSETS = [
-  '/',                // ルート
-  '/index.html',
-  '/style.css',
-  '/spots.js',
-  '/spots-all.js',
-  '/manifest.json',
-  '/icon.png',
-  '/onigiriya_kanatake_192.png',
-  '/onigiriya_kanatake_512.png',
-  '/IMG_7605.jpeg',
-  '/1.png',
-  '/2.png',
-  '/3.png',
-  '/4.png',
-  '/privacy.html'
+const urlsToCache = [
+  '/kanatae-app/',
+  '/kanatae-app/index.html',
+  '/kanatae-app/style.css',
+  '/kanatae-app/spots.js',
+  '/kanatae-app/spots-all.js',
+  '/kanatae-app/icon.png',
+  '/kanatae-app/onigiriya_kanatake_192.png',
+  '/kanatae-app/onigiriya_kanatake_512.png',
+  '/kanatae-app/IMG_7605.jpeg',
+  '/kanatae-app/1.png',
+  '/kanatae-app/2.png',
+  '/kanatae-app/3.png',
+  '/kanatae-app/4.png'
 ];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS))
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
   );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    (async () => {
-      const keys = await caches.keys();
-      await Promise.all(
-        keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : Promise.resolve()))
-      );
-      await self.clients.claim();
-    })()
+self.addEventListener('activate', (e) => {
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : Promise.resolve())));
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener('fetch', (e) => {
+  const req = e.request;
+  const url = new URL(req.url);
+
+  // 同一オリジンのGETだけ
+  if (req.method !== 'GET' || url.origin !== self.location.origin) return;
+
+  e.respondWith(
+    caches.match(req).then((cached) => {
+      if (cached) return cached;
+      return fetch(req).then((res) => {
+        if (res && res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+        }
+        return res;
+      });
+    })
   );
 });
 
-self.addEventListener('fetch', (event) => {
-  const req = event.request;
-  if (req.method !== 'GET') return;
-
-  // ナビゲーション（ページ遷移）は「ネット優先・失敗したらキャッシュ」
-  if (req.mode === 'navigate') {
-    event.respondWith(
-      (async () => {
-        try {
-          const fresh = await fetch(req);
-          const cache = await caches.open(CACHE_NAME);
-          cache.put('/index.html', fresh.clone());
-          return fresh;
-        } catch (e) {
-          const cached = await caches.match('/index.html');
-          return cached || Response.error();
-        }
-      })()
-    );
-    return;
+// ===== Push通知 =====
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data ? event.data.text() : '' };
   }
 
-  // それ以外の静的ファイルは「キャッシュ優先」
-  event.respondWith(
-    caches.match(req).then((cached) => cached || fetch(req))
-  );
+  const title = data.title || 'おにぎり屋かなたけ';
+  const body = data.body || 'お知らせです';
+  const targetUrl = data.url || '/kanatae-app/';
+
+  const options = {
+    body,
+    icon: '/kanatae-app/onigiriya_kanatake_192.png',
+    badge: '/kanatae-app/onigiriya_kanatake_192.png',
+    data: { url: targetUrl }
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) ? event.notification.data.url : '/kanatae-app/';
+
+  event.waitUntil((async () => {
+    const allClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of allClients) {
+      if (c.url.includes('/kanatae-app/') && 'focus' in c) return c.focus();
+    }
+    if (clients.openWindow) return clients.openWindow(url);
+  })());
 });
