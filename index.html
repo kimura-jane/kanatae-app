@@ -84,12 +84,15 @@
             <p class="coupon-label">特典</p>
             <p class="coupon-value">😊 店主の笑顔</p>
           </div>
-
           <p class="coupon-note">※ 何度でも使えます</p>
 
-          <!-- 通知 -->
-          <button id="notifyBtn" class="notify-btn" type="button">🔔 通知を受け取る</button>
-          <p id="notifyStatus" class="notify-status"></p>
+          <!-- Push通知 -->
+          <div style="margin-top:16px; text-align:center;">
+            <button id="pushBtn" class="modal-btn" style="display:inline-flex; align-items:center; gap:8px;">
+              🔔 通知を受け取る
+            </button>
+            <div id="pushStatus" style="margin-top:10px; font-size:14px; color:#b00020;"></div>
+          </div>
         </div>
       </section>
     </main>
@@ -102,97 +105,24 @@
       <h3 class="modal-title" id="modalTitle"></h3>
       <p class="modal-time" id="modalTime"></p>
       <a class="modal-btn" id="modalMap" href="#" target="_blank" rel="noopener">Googleマップで開く</a>
-      <button class="modal-btn modal-close" id="modalClose" type="button">閉じる</button>
+      <button class="modal-btn modal-close" id="modalClose">閉じる</button>
     </div>
   </div>
 
   <script>
     // =========================
-    // 設定（ここが肝）
+    // 設定（ここだけ確認）
     // =========================
+    // Cloudflare Worker のURL（スクショの workers.dev を入れる）
+    const PUSH_API_BASE = 'https://kanatae-push.la-kofu.workers.dev';
 
-    // お前がCloudflareから持ってきた「正しい公開鍵」
-    const VAPID_PUBLIC_KEY =
-      'BKlkSEDgGR8DGUWi4MAGjOKG5jx0iEpY2JSTkJ_0dQabOiekSZ-xH90x5jyCQTm4g3jTkljW8higfB5ZWZ4FDhA';
-
-    // GitHub PagesにはAPIが置けない → CloudflareのURLを固定で書く
-    // ※お前のPagesドメインが違うならここだけ直す
-    const PUSH_API_BASE = 'https://kanatae-app.pages.dev';
+    // 使うAPIパス（お前が作った functions/api/ と揃える）
+    const API_VAPID = '/api/vapid';
+    const API_SUBSCRIBE = '/api/subscribe';
 
     // =========================
-    // ユーティリティ
-    // =========================
-    function isStandalonePWA() {
-      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-    }
-
-    function urlBase64ToUint8Array(base64String) {
-      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-      const rawData = atob(base64);
-      const outputArray = new Uint8Array(rawData.length);
-      for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
-      return outputArray;
-    }
-
-    function setNotifyStatus(msg, isError = false) {
-      const el = document.getElementById('notifyStatus');
-      if (!el) return;
-      el.textContent = msg;
-      el.style.color = isError ? '#b00020' : '#333';
-    }
-
-    async function ensureServiceWorker() {
-      if (!('serviceWorker' in navigator)) throw new Error('このブラウザはService Worker非対応');
-      const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
-      await navigator.serviceWorker.ready;
-      return reg;
-    }
-
-    // =========================
-    // 通知購読（Push）
-    // =========================
-    async function subscribePush() {
-      // iPhoneは「ホーム画面に追加したPWA」で開かないとPushが基本動かない
-      if (!isStandalonePWA()) {
-        throw new Error('iPhoneは「ホーム画面に追加」→アイコンから開いた時だけ通知が使える');
-      }
-
-      const reg = await ensureServiceWorker();
-
-      if (!('Notification' in window)) throw new Error('Notification API 非対応');
-      if (!('PushManager' in window)) throw new Error('Push API 非対応（iOSはPWAでのみ可）');
-      if (!reg.pushManager) throw new Error('pushManager が見つからない（PWAで開けてない可能性が高い）');
-
-      const perm = await Notification.requestPermission();
-      if (perm !== 'granted') throw new Error('通知が許可されてない');
-
-      const existing = await reg.pushManager.getSubscription();
-      const sub = existing || await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-      });
-
-      // Cloudflareへ保存
-      const res = await fetch(`${PUSH_API_BASE}/api/subscribe`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ subscription: sub })
-      });
-
-      if (!res.ok) {
-        const t = await res.text().catch(() => '');
-        throw new Error(`購読の保存に失敗: ${res.status} ${t}`);
-      }
-
-      setNotifyStatus('✅ 通知の登録が完了した');
-    }
-
-    // =========================
-    // 既存のUI処理（お前のコード）
-    // =========================
-
     // タブ切り替え
+    // =========================
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabPanes = document.querySelectorAll('.tab-pane');
     let mapInitialized = false;
@@ -224,7 +154,9 @@
       });
     });
 
-    // カレンダー（spots-all.js を使用）
+    // =========================
+    // カレンダー（spots-all.js）
+    // =========================
     let currentYear = 2025;
     let currentMonth = 12;
 
@@ -233,10 +165,10 @@
       const events = {};
 
       spots.forEach(spot => {
-        const match = spot.date.match(/(\d+)\/(\d+)/);
+        const match = spot.date && spot.date.match(/(\d+)\/(\d+)/);
         if (match) {
-          const m = parseInt(match[1]);
-          const d = parseInt(match[2]);
+          const m = parseInt(match[1], 10);
+          const d = parseInt(match[2], 10);
           if (m === month) {
             if (!events[d]) events[d] = [];
             events[d].push(spot);
@@ -292,7 +224,7 @@
         '上野恩賜公園': '上野公園',
         '国立代々木競技場 第二体育館': '代々木'
       };
-      return shortcuts[name] || name.substring(0, 6);
+      return shortcuts[name] || (name ? name.substring(0, 6) : '');
     }
 
     function renderCalendar() {
@@ -308,7 +240,7 @@
 
       const events = getEventsForMonth(currentYear, currentMonth);
       const today = new Date();
-      const isCurrentMonth = today.getFullYear() === currentYear && today.getMonth() + 1 === currentMonth;
+      const isCurrentMonth = today.getFullYear() === currentYear && (today.getMonth() + 1) === currentMonth;
       const todayDate = today.getDate();
 
       let html = ['日','月','火','水','木','金','土']
@@ -338,7 +270,7 @@
 
       grid.querySelectorAll('.calendar-day.has-event').forEach(el => {
         el.addEventListener('click', () => {
-          const day = parseInt(el.dataset.day);
+          const day = parseInt(el.dataset.day, 10);
           showEventModal(day, events[day]);
         });
       });
@@ -346,14 +278,14 @@
 
     function showEventModal(day, eventList) {
       const modal = document.getElementById('modal');
-      const event = eventList[0];
+      const event = (eventList && eventList[0]) ? eventList[0] : null;
 
       document.getElementById('modalDate').textContent = `${currentMonth}月${day}日`;
-      document.getElementById('modalTitle').textContent = event.name;
-      document.getElementById('modalTime').textContent = event.time || '時間未定';
+      document.getElementById('modalTitle').textContent = event ? event.name : '';
+      document.getElementById('modalTime').textContent = (event && event.time) ? event.time : '時間未定';
 
       const mapLink = document.getElementById('modalMap');
-      if (event.lat && event.lng) {
+      if (event && event.lat && event.lng) {
         mapLink.href = `https://www.google.com/maps?q=${event.lat},${event.lng}`;
         mapLink.style.display = 'block';
       } else {
@@ -371,17 +303,25 @@
 
     document.getElementById('prevMonth').addEventListener('click', () => {
       currentMonth--;
-      if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+      if (currentMonth < 1) {
+        currentMonth = 12;
+        currentYear--;
+      }
       renderCalendar();
     });
 
     document.getElementById('nextMonth').addEventListener('click', () => {
       currentMonth++;
-      if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+      if (currentMonth > 12) {
+        currentMonth = 1;
+        currentYear++;
+      }
       renderCalendar();
     });
 
-    // マップ（spots.js を使用 = 今月のみ）
+    // =========================
+    // マップ（spots.js = 今月のみ）
+    // =========================
     function initMap() {
       mapInstance = L.map('map').setView([35.75, 139.75], 10);
 
@@ -398,6 +338,7 @@
 
       const spots = window.spots || [];
       const list = document.getElementById('spotList');
+      list.innerHTML = '';
 
       spots.forEach((s, i) => {
         if (s.lat && s.lng) {
@@ -427,22 +368,130 @@
       }
     }
 
+    // =========================
+    // Push 通知（iOS/対応チェック厳密版）
+    // =========================
+    const pushBtn = document.getElementById('pushBtn');
+    const pushStatus = document.getElementById('pushStatus');
+
+    function setStatus(msg, isError = true) {
+      pushStatus.textContent = msg || '';
+      pushStatus.style.color = isError ? '#b00020' : '#2e7d32';
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const raw = atob(base64);
+      const outputArray = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; ++i) outputArray[i] = raw.charCodeAt(i);
+      return outputArray;
+    }
+
+    async function registerSW() {
+      if (!('serviceWorker' in navigator)) {
+        setStatus('このブラウザは Service Worker 非対応');
+        return null;
+      }
+      try {
+        const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+        return reg;
+      } catch (e) {
+        setStatus('Service Worker 登録に失敗: ' + (e && e.message ? e.message : e));
+        return null;
+      }
+    }
+
+    async function getVapidPublicKey() {
+      if (!PUSH_API_BASE) throw new Error('PUSH_API_BASE が未設定');
+      const url = PUSH_API_BASE.replace(/\/$/, '') + API_VAPID;
+      const res = await fetch(url, { method: 'GET', mode: 'cors' });
+      if (!res.ok) throw new Error('VAPID取得失敗: ' + res.status);
+      const data = await res.json();
+      // { publicKey: "..." } か "..." どっちでも耐える
+      return (typeof data === 'string') ? data : (data.publicKey || data.vapidPublicKey || '');
+    }
+
+    async function postSubscription(sub) {
+      const url = PUSH_API_BASE.replace(/\/$/, '') + API_SUBSCRIBE;
+      const res = await fetch(url, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sub)
+      });
+      if (!res.ok) throw new Error('購読保存失敗: ' + res.status);
+      return res.json().catch(() => ({}));
+    }
+
+    async function ensurePushReady(reg) {
+      // iOSや一部ブラウザでは pushManager 自体が無い
+      if (!reg || !reg.pushManager || typeof reg.pushManager.subscribe !== 'function') {
+        setStatus('この端末/ブラウザはPush通知に未対応（iOSは「ホーム画面に追加」＋対応OSが必要）');
+        return false;
+      }
+      if (!('Notification' in window)) {
+        setStatus('Notification API 非対応');
+        return false;
+      }
+      // HTTPS/localhost必須（Pages/WorkersならOK）
+      if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+        setStatus('HTTPSで開いてください');
+        return false;
+      }
+      return true;
+    }
+
+    async function subscribePush() {
+      setStatus('');
+
+      const reg = await registerSW();
+      if (!await ensurePushReady(reg)) return;
+
+      // 権限
+      let perm = Notification.permission;
+      if (perm === 'default') {
+        perm = await Notification.requestPermission();
+      }
+      if (perm !== 'granted') {
+        setStatus('通知が許可されていません（端末設定で許可して）');
+        return;
+      }
+
+      // 既存購読があるか
+      const existing = await reg.pushManager.getSubscription();
+      if (existing) {
+        setStatus('すでに通知は登録済み', false);
+        return;
+      }
+
+      // VAPID公開鍵取得→購読
+      const publicKey = await getVapidPublicKey();
+      if (!publicKey) {
+        setStatus('VAPID公開鍵が取得できない（API側の /api/vapid を確認）');
+        return;
+      }
+
+      const applicationServerKey = urlBase64ToUint8Array(publicKey);
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey
+      });
+
+      // サーバに保存
+      await postSubscription(sub);
+      setStatus('通知登録できた', false);
+    }
+
+    pushBtn.addEventListener('click', () => {
+      subscribePush().catch(err => setStatus(err && err.message ? err.message : String(err)));
+    });
+
     // 初期化
     document.addEventListener('DOMContentLoaded', () => {
       renderCalendar();
-
-      // 通知ボタン
-      const btn = document.getElementById('notifyBtn');
-      if (btn) {
-        btn.addEventListener('click', async () => {
-          try {
-            setNotifyStatus('処理中...');
-            await subscribePush();
-          } catch (e) {
-            setNotifyStatus(`❌ ${e.message}`, true);
-          }
-        });
-      }
+      // SWは先に登録しておく（Pushボタン押す前の準備）
+      registerSW();
     });
   </script>
 </body>
