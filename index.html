@@ -8,31 +8,35 @@
   <meta name="description" content="おにぎり屋かなたけの出店スケジュール・マップ・クーポン">
   <meta name="theme-color" content="#f5a623">
 
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="onigiriya_kanatake_192.png">
+  <!-- iOS PWAっぽくする（任意だけど入れとく） -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-  <!-- OGP -->
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./onigiriya_kanatake_192.png">
+
+  <!-- OGP（SNS用。絶対URLの方が確実だが今は相対でもOK） -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="おにぎり屋かなたけ">
   <meta property="og:title" content="おにぎり屋かなたけ">
   <meta property="og:description" content="出店スケジュール・マップ・クーポン">
-  <meta property="og:image" content="onigiriya_kanatake_512.png">
+  <meta property="og:image" content="./onigiriya_kanatake_512.png">
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 
-  <link rel="stylesheet" href="style.css">
-  <script src="spots.js" defer></script>
-  <script src="spots-all.js" defer></script>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./spots.js" defer></script>
+  <script src="./spots-all.js" defer></script>
 </head>
 
 <body>
   <div class="app">
     <header class="header">
       <h1>
-        <img src="icon.png" alt="" class="header-icon">
+        <img src="./icon.png" alt="" class="header-icon">
         おにぎり屋かなたけ
       </h1>
     </header>
@@ -69,31 +73,25 @@
       <!-- メニュータブ -->
       <section class="tab-pane" id="menu">
         <div class="menu-container">
-          <img src="IMG_7605.jpeg" alt="おにぎり屋かなたけ メニュー" class="menu-image">
+          <img src="./IMG_7605.jpeg" alt="おにぎり屋かなたけ メニュー" class="menu-image">
         </div>
       </section>
 
       <!-- クーポンタブ -->
       <section class="tab-pane" id="coupon">
         <div class="coupon">
-          <img src="icon.png" alt="かなたけ" class="coupon-icon">
+          <img src="./icon.png" alt="かなたけ" class="coupon-icon">
           <h2 class="coupon-title">スマイルクーポン</h2>
           <p class="coupon-desc">この画面を店主に見せてね</p>
-
           <div class="coupon-card">
             <p class="coupon-label">特典</p>
             <p class="coupon-value">😊 店主の笑顔</p>
           </div>
-
           <p class="coupon-note">※ 何度でも使えます</p>
 
-          <!-- ▼ 通知UI（追加） -->
-          <div style="margin-top:14px;">
-            <button id="pushEnableBtn" class="modal-btn" type="button">🔔 通知を受け取る</button>
-            <button id="pushDisableBtn" class="modal-btn modal-close" type="button" style="display:none;">🔕 通知を解除</button>
-            <p id="pushStatus" style="margin-top:10px; font-size:14px; opacity:.85;"></p>
-          </div>
-          <!-- ▲ 通知UI（追加） -->
+          <!-- 通知 -->
+          <button id="pushBtn" class="push-btn" type="button">🔔 通知を受け取る</button>
+          <p id="pushStatus" class="push-status">（未登録）</p>
         </div>
       </section>
     </main>
@@ -105,29 +103,31 @@
       <p class="modal-date" id="modalDate"></p>
       <h3 class="modal-title" id="modalTitle"></h3>
       <p class="modal-time" id="modalTime"></p>
-      <a class="modal-btn" id="modalMap" href="#" target="_blank" rel="noopener">Googleマップで開く</a>
+      <a class="modal-btn" id="modalMap" href="#" target="_blank">Googleマップで開く</a>
       <button class="modal-btn modal-close" id="modalClose">閉じる</button>
     </div>
   </div>
 
   <script>
     // =========================
-    // 設定（お前が合わせる所）
+    // 設定（ここだけお前の環境に合わせる）
     // =========================
-
-    // Cloudflare Worker のベースURL（お前のやつ）
-    const PUSH_API_BASE = 'https://kanatae-push.la-kofu.workers.dev';
-
-    // VAPID公開鍵（Base64URL文字列）※ここは絶対に必要
-    // 例: "BEl...（長い文字列）...Q"
-    const VAPID_PUBLIC_KEY = 'PUT_YOUR_VAPID_PUBLIC_KEY_HERE';
-
-    // 通知の対象（必要なら後で好きに）
-    const DEFAULT_HOUR = 21;      // 21時通知（例）
-    const DEFAULT_PLACES = [];    // 例: ["蕨市役所","立教大学"]
+    // Cloudflare Worker（Push用のAPI）: お前の実URLに合わせて
+    const PUSH_API_BASE = "https://<お前のworkerのURL>"; // 例: https://kanatake-push.xxx.workers.dev
 
     // =========================
-    // 既存：タブ切り替え
+    // UI 共通
+    // =========================
+    const $status = document.getElementById("pushStatus");
+    const $pushBtn = document.getElementById("pushBtn");
+
+    function setStatus(msg, isError = false) {
+      $status.textContent = msg;
+      $status.style.color = isError ? "#c00" : "";
+    }
+
+    // =========================
+    // タブ切り替え
     // =========================
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabPanes = document.querySelectorAll('.tab-pane');
@@ -161,7 +161,7 @@
     });
 
     // =========================
-    // 既存：カレンダー（spots-all.js）
+    // カレンダー（spots-all.js）
     // =========================
     let currentYear = 2025;
     let currentMonth = 12;
@@ -315,7 +315,7 @@
     });
 
     // =========================
-    // 既存：マップ（spots.js）
+    // マップ（spots.js）
     // =========================
     function initMap() {
       mapInstance = L.map('map').setView([35.75, 139.75], 10);
@@ -325,7 +325,7 @@
       }).addTo(mapInstance);
 
       const icon = L.icon({
-        iconUrl: 'icon.png',
+        iconUrl: './icon.png',
         iconSize: [44, 44],
         iconAnchor: [22, 32],
         popupAnchor: [0, -28]
@@ -333,7 +333,7 @@
 
       const spots = window.spots || [];
       const list = document.getElementById('spotList');
-      list.innerHTML = '';
+      list.innerHTML = "";
 
       spots.forEach((s, i) => {
         if (s.lat && s.lng) {
@@ -358,147 +358,119 @@
       });
 
       const existing = markersArray.filter(Boolean);
-      if (existing.length) {
-        mapInstance.fitBounds(L.featureGroup(existing).getBounds().pad(0.15));
-      }
+      if (existing.length) mapInstance.fitBounds(L.featureGroup(existing).getBounds().pad(0.15));
     }
 
     // =========================
-    // 追加：通知（Push購読）
+    // Push通知（重要：iPhoneはホーム画面PWAじゃないと基本無理）
     // =========================
-    const pushEnableBtn  = document.getElementById('pushEnableBtn');
-    const pushDisableBtn = document.getElementById('pushDisableBtn');
-    const pushStatus     = document.getElementById('pushStatus');
-
-    function setPushUiState({ enabled, message }) {
-      pushStatus.textContent = message || '';
-      pushEnableBtn.style.display  = enabled ? 'none' : 'block';
-      pushDisableBtn.style.display = enabled ? 'block' : 'none';
+    function isStandalone() {
+      return window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
     }
 
     function urlBase64ToUint8Array(base64String) {
-      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
       const rawData = atob(base64);
       const outputArray = new Uint8Array(rawData.length);
       for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
       return outputArray;
     }
 
-    async function ensureServiceWorkerReady() {
-      if (!('serviceWorker' in navigator)) throw new Error('このブラウザはService Worker非対応');
-      const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
-      await navigator.serviceWorker.ready;
-      return reg;
+    async function registerSW() {
+      if (!("serviceWorker" in navigator)) throw new Error("Service Worker非対応");
+      // scopeは ./ に固定（/kanatae-app/ 配下で安定させる）
+      await navigator.serviceWorker.register("./sw.js", { scope: "./" });
+      return await navigator.serviceWorker.ready;
     }
 
-    async function getExistingSubscription(reg) {
-      const sub = await reg.pushManager.getSubscription();
-      return sub;
+    async function fetchVapidPublicKey() {
+      const res = await fetch(`${PUSH_API_BASE}/vapidPublicKey`, { mode: "cors" });
+      if (!res.ok) throw new Error("VAPID_PUBLIC_KEY 取得失敗");
+      const data = await res.json();
+      if (!data || !data.publicKey) throw new Error("VAPID_PUBLIC_KEY 未設定");
+      return data.publicKey;
     }
 
-    async function upsertSubscriptionToServer(sub) {
-      const body = {
-        endpoint: sub.endpoint,
-        subscription: sub.toJSON(),
-        places: DEFAULT_PLACES,
-        hour: DEFAULT_HOUR
-      };
-
+    async function upsertSubscription(sub) {
       const res = await fetch(`${PUSH_API_BASE}/subs/upsert`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(body)
+        method: "POST",
+        mode: "cors",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ subscription: sub })
       });
-
-      if (!res.ok) {
-        const t = await res.text().catch(() => '');
-        throw new Error(`サーバ登録失敗: ${res.status} ${t}`);
-      }
-      return await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error("サーバー保存失敗");
+      return true;
     }
 
-    async function removeSubscriptionFromServer(sub) {
-      const body = { endpoint: sub.endpoint };
-      const res = await fetch(`${PUSH_API_BASE}/subs/remove`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      // 失敗しても解除は続ける（最悪サーバ側にゴミが残るだけ）
-      return res.ok;
+    async function initPushUI() {
+      try {
+        // iPhone対策：Safariタブで開いてるだけなら警告
+        // iOSはホーム画面に追加したWebアプリのみWeb Push対応  [oai_citation:1‡WebKit](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/)
+        if (/(iPhone|iPad|iPod)/i.test(navigator.userAgent) && !isStandalone()) {
+          setStatus("iPhoneは「ホーム画面に追加」したアプリから開かないと通知は動かない", true);
+          return;
+        }
+
+        const reg = await registerSW();
+
+        if (!("Notification" in window)) {
+          setStatus("Notification API 非対応", true);
+          return;
+        }
+        if (!("PushManager" in window) || !reg.pushManager) {
+          setStatus("この環境はPush未対応（iPhoneはホーム画面PWAのみ対応）", true);
+          return;
+        }
+
+        // 既存購読チェック
+        const existing = await reg.pushManager.getSubscription();
+        if (existing) {
+          setStatus("✅ 通知は登録済み");
+          return;
+        }
+
+        setStatus("（未登録）");
+      } catch (e) {
+        setStatus(`✖ ${e.message}`, true);
+      }
     }
 
-    async function enablePush() {
-      if (VAPID_PUBLIC_KEY === 'PUT_YOUR_VAPID_PUBLIC_KEY_HERE') {
-        throw new Error('VAPID_PUBLIC_KEY が未設定');
-      }
+    $pushBtn.addEventListener("click", async () => {
+      $pushBtn.disabled = true;
+      try {
+        if (!PUSH_API_BASE || PUSH_API_BASE.includes("<お前のworker")) {
+          throw new Error("PUSH_API_BASE を設定して");
+        }
 
-      const reg = await ensureServiceWorkerReady();
+        const reg = await registerSW();
 
-      const perm = await Notification.requestPermission();
-      if (perm !== 'granted') {
-        throw new Error('通知が許可されなかった');
-      }
+        // 権限要求（ユーザー操作の中でやる必要がある）
+        const perm = await Notification.requestPermission();
+        if (perm !== "granted") throw new Error("通知が許可されなかった");
 
-      let sub = await getExistingSubscription(reg);
-      if (!sub) {
-        sub = await reg.pushManager.subscribe({
+        const publicKey = await fetchVapidPublicKey();
+        const applicationServerKey = urlBase64ToUint8Array(publicKey);
+
+        const sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+          applicationServerKey
         });
-      }
 
-      await upsertSubscriptionToServer(sub);
-      setPushUiState({ enabled: true, message: '✅ 通知を有効化しました' });
-    }
+        await upsertSubscription(sub);
 
-    async function disablePush() {
-      const reg = await ensureServiceWorkerReady();
-      const sub = await getExistingSubscription(reg);
-      if (!sub) {
-        setPushUiState({ enabled: false, message: 'すでに解除済みです' });
-        return;
-      }
-
-      await removeSubscriptionFromServer(sub);
-      await sub.unsubscribe();
-      setPushUiState({ enabled: false, message: '🔕 通知を解除しました' });
-    }
-
-    pushEnableBtn.addEventListener('click', async () => {
-      try {
-        setPushUiState({ enabled: false, message: '処理中…' });
-        await enablePush();
+        setStatus("✅ 通知を登録した");
       } catch (e) {
-        setPushUiState({ enabled: false, message: `❌ ${e?.message || e}` });
+        setStatus(`✖ ${e.message}`, true);
+      } finally {
+        $pushBtn.disabled = false;
       }
     });
-
-    pushDisableBtn.addEventListener('click', async () => {
-      try {
-        setPushUiState({ enabled: true, message: '処理中…' });
-        await disablePush();
-      } catch (e) {
-        setPushUiState({ enabled: true, message: `❌ ${e?.message || e}` });
-      }
-    });
-
-    async function refreshPushUi() {
-      try {
-        const reg = await ensureServiceWorkerReady();
-        const sub = await getExistingSubscription(reg);
-        if (sub) setPushUiState({ enabled: true, message: '✅ 通知は有効です' });
-        else setPushUiState({ enabled: false, message: '通知はオフです（ボタンでオン）' });
-      } catch (e) {
-        setPushUiState({ enabled: false, message: `❌ ${e?.message || e}` });
-      }
-    }
 
     // 初期化
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener("DOMContentLoaded", () => {
       renderCalendar();
-      refreshPushUi();
+      initPushUI();
     });
   </script>
 </body>
