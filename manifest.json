@@ -2,50 +2,49 @@
   "name": "おにぎり屋かなたけ",
   "short_name": "かなたけ",
   "description": "おにぎり屋かなたけの出店スケジュール・マップ・クーポン",
-  "lang": "ja",
-  "id": "/",
-  "start_url": "/",
-  "scope": "/",
+  "id": "/kanatae-app/",
+  "start_url": "/kanatae-app/",
+  "scope": "/kanatae-app/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#faf9f3",
   "theme_color": "#f5a623",
   "icons": [
     {
-      "src": "/onigiriya_kanatake_192.png",
+      "src": "/kanatae-app/onigiriya_kanatake_192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/onigiriya_kanatake_512.png",
+      "src": "/kanatae-app/onigiriya_kanatake_512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ],
   "screenshots": [
     {
-      "src": "/1.png",
+      "src": "/kanatae-app/1.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "カレンダー画面"
     },
     {
-      "src": "/2.png",
+      "src": "/kanatae-app/2.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "マップ画面"
     },
     {
-      "src": "/3.png",
+      "src": "/kanatae-app/3.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "メニュー画面"
     },
     {
-      "src": "/4.png",
+      "src": "/kanatae-app/4.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
