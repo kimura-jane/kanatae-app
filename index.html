@@ -18,7 +18,11 @@
   <meta property="og:title" content="おにぎり屋かなたけ">
   <meta property="og:description" content="出店スケジュール・マップ・クーポン">
   <meta property="og:image" content="onigiriya_kanatake_512.png">
-  
+
+  // Service Worker登録（安全版）
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js', { scope: './' });
+}
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
