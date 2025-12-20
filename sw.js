@@ -1,9 +1,9 @@
 const CACHE_NAME = 'kanatake-v7';
-const ASSETS = [
+
+const urlsToCache = [
   './',
   './index.html',
   './style.css',
-  './manifest.json',
   './spots.js',
   './spots-all.js',
   './icon.png',
@@ -13,34 +13,33 @@ const ASSETS = [
   './1.png',
   './2.png',
   './3.png',
-  './4.png'
+  './4.png',
+  './manifest.json'
 ];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_NAME);
-    await cache.addAll(ASSETS);
-    await self.skipWaiting();
-  })());
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
+  );
+  self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil((async () => {
+self.addEventListener('activate', (e) => {
+  e.waitUntil((async () => {
     const keys = await caches.keys();
     await Promise.all(keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : Promise.resolve())));
     await self.clients.claim();
   })());
 });
 
-// キャッシュ戦略：同一オリジンGETは「キャッシュ優先→なければ取得→保存」
-self.addEventListener('fetch', (event) => {
-  const req = event.request;
+self.addEventListener('fetch', (e) => {
+  const req = e.request;
   const url = new URL(req.url);
 
   if (req.method !== 'GET') return;
   if (url.origin !== self.location.origin) return;
 
-  event.respondWith((async () => {
+  e.respondWith((async () => {
     const cached = await caches.match(req);
     if (cached) return cached;
 
@@ -54,12 +53,12 @@ self.addEventListener('fetch', (event) => {
   })());
 });
 
-// ===== Push通知 =====
+// ===== Push通知（受信）=====
 self.addEventListener('push', (event) => {
   let data = {};
   try {
     data = event.data ? event.data.json() : {};
-  } catch (e) {
+  } catch {
     data = { body: event.data ? event.data.text() : '' };
   }
 
@@ -79,16 +78,16 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const target = (event.notification.data && event.notification.data.url) ? event.notification.data.url : './';
+  const url = (event.notification.data && event.notification.data.url) ? event.notification.data.url : './';
 
   event.waitUntil((async () => {
     const allClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const c of allClients) {
-      // 同じスコープ内のタブがあればフォーカス
-      if (c.url && c.url.includes('/kanatae-app/') && 'focus' in c) {
-        return c.focus();
+      if ('focus' in c) {
+        c.focus();
+        return;
       }
     }
-    if (clients.openWindow) return clients.openWindow(target);
+    if (clients.openWindow) return clients.openWindow(url);
   })());
 });
