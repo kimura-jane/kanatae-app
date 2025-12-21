@@ -33,6 +33,7 @@
       <button class="tab-btn" data-tab="map">📍 マップ</button>
       <button class="tab-btn" data-tab="menu">🍙 メニュー</button>
       <button class="tab-btn" data-tab="coupon">🎫 クーポン</button>
+      <button class="tab-btn" data-tab="settings">⚙️ 設定</button>
     </nav>
 
     <main class="tab-content">
@@ -72,55 +73,56 @@
             <p class="coupon-value">😊 店主の笑顔</p>
           </div>
           <p class="coupon-note">※ 何度でも使えます</p>
+        </div>
+      </section>
 
-          <!-- 通知設定 -->
-          <div style="margin-top:18px; text-align:left; max-width:520px; margin-left:auto; margin-right:auto;">
-            <p style="font-weight:800; margin:0 0 8px 0;">通知設定</p>
-
-            <label style="display:block; margin:8px 0;">
+      <section class="tab-pane" id="settings">
+        <div class="settings">
+          <h2 class="settings-title">🔔 通知設定</h2>
+          
+          <div class="settings-section">
+            <p class="settings-label">通知時間</p>
+            <label class="settings-option">
               <input type="radio" name="notifyHour" value="18">
               前日18:00 に通知
             </label>
-            <label style="display:block; margin:8px 0;">
+            <label class="settings-option">
               <input type="radio" name="notifyHour" value="21" checked>
               前日21:00 に通知
             </label>
+          </div>
 
-            <p style="font-weight:800; margin:14px 0 8px 0;">通知する対象</p>
-
-            <!-- これが「全ての出店の前日に通知」 -->
-            <label style="display:block; margin:6px 0;">
+          <div class="settings-section">
+            <p class="settings-label">通知する出店場所</p>
+            <label class="settings-option">
               <input type="checkbox" id="place_all" checked>
               全ての出店の前日に通知（場所で絞らない）
             </label>
 
-            <!-- 4箇所のみ、複数選択OK -->
-            <div id="placeList" style="padding-left:14px;">
-              <label style="display:block; margin:6px 0;">
+            <div id="placeList" class="settings-places">
+              <label class="settings-option">
                 <input type="checkbox" class="placeChk" value="sakura_hospital">
                 川口さくら病院
               </label>
-              <label style="display:block; margin:6px 0;">
+              <label class="settings-option">
                 <input type="checkbox" class="placeChk" value="dokkyo">
                 獨協大学
               </label>
-              <label style="display:block; margin:6px 0;">
+              <label class="settings-option">
                 <input type="checkbox" class="placeChk" value="saitama_cityhall">
                 さいたま市役所
               </label>
-              <label style="display:block; margin:6px 0;">
+              <label class="settings-option">
                 <input type="checkbox" class="placeChk" value="dynam_togasaki">
                 ダイナム戸ケ崎
               </label>
             </div>
 
-            <p style="margin:10px 0 0 0; color:#666; font-size:13px;">
-              ※「全ての出店の前日に通知」がONだと、上の4箇所チェックは無効になります。
-            </p>
+            <p class="settings-note">※「全ての出店の前日に通知」がONだと、上の4箇所チェックは無効になります。</p>
           </div>
 
-          <button class="modal-btn" id="pushBtn" type="button" style="margin-top:14px;">🔔 通知を受け取る</button>
-          <p id="pushStatus" style="margin-top:10px; font-weight:800;"></p>
+          <button class="settings-btn" id="pushBtn" type="button">🔔 通知を受け取る</button>
+          <p id="pushStatus" class="settings-status"></p>
         </div>
       </section>
     </main>
@@ -137,11 +139,8 @@
   </div>
 
   <script>
-    // ===== base（GitHub Pagesの /kanatae-app/ と、Pagesの / 両対応）=====
-    const BASE = new URL("./", location.href).pathname;   // 例: "/kanatae-app/" or "/"
+    const BASE = new URL("./", location.href).pathname;
     const SW_URL = BASE + "sw.js";
-
-    // ★ Push Worker のURL（固定）
     const PUSH_API_BASE = "https://kanatae-push.la-kofu.workers.dev";
 
     // ===== tabs =====
@@ -333,7 +332,6 @@
       return (v === "18") ? 18 : 21;
     }
 
-    // 「全て通知」なら []（空）を送る＝サーバ側で “場所フィルタ無し” 扱い
     function getSelectedPlaces() {
       const all = document.getElementById("place_all").checked;
       if (all) return [];
@@ -393,7 +391,6 @@
       const hour = getSelectedHour();
       const places = getSelectedPlaces();
 
-      // 重要：placesが空でもOK（＝全ての出店を前日に通知）
       await upsertSubscription(sub, hour, places);
 
       statusEl.textContent = "✅ 登録OK（通知を送れる状態）";
