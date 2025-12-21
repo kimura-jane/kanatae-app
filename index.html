@@ -80,48 +80,54 @@
         <div class="settings">
           <h2 class="settings-title">🔔 通知設定</h2>
           
-          <div class="settings-section">
-            <p class="settings-label">通知時間</p>
+          <div class="settings-card">
+            <p class="settings-card-title">⏰ 通知する時間</p>
             <label class="settings-option">
               <input type="radio" name="notifyHour" value="18">
-              前日18:00 に通知
+              <span class="settings-option-text">前日 18:00 に通知</span>
             </label>
             <label class="settings-option">
               <input type="radio" name="notifyHour" value="21" checked>
-              前日21:00 に通知
+              <span class="settings-option-text">前日 21:00 に通知</span>
             </label>
           </div>
 
-          <div class="settings-section">
-            <p class="settings-label">通知する出店場所</p>
+          <div class="settings-card">
+            <p class="settings-card-title">📍 通知する出店場所</p>
             <label class="settings-option">
               <input type="checkbox" id="place_all" checked>
-              全ての出店の前日に通知（場所で絞らない）
+              <span class="settings-option-text">すべての出店を通知する</span>
             </label>
 
             <div id="placeList" class="settings-places">
+              <p class="settings-places-title">または、場所を選んで通知：</p>
               <label class="settings-option">
                 <input type="checkbox" class="placeChk" value="sakura_hospital">
-                川口さくら病院
+                <span class="settings-option-text">川口さくら病院</span>
               </label>
               <label class="settings-option">
                 <input type="checkbox" class="placeChk" value="dokkyo">
-                獨協大学
+                <span class="settings-option-text">獨協大学</span>
               </label>
               <label class="settings-option">
                 <input type="checkbox" class="placeChk" value="saitama_cityhall">
-                さいたま市役所
+                <span class="settings-option-text">さいたま市役所</span>
               </label>
               <label class="settings-option">
                 <input type="checkbox" class="placeChk" value="dynam_togasaki">
-                ダイナム戸ケ崎
+                <span class="settings-option-text">ダイナム戸ケ崎</span>
               </label>
             </div>
 
-            <p class="settings-note">※「全ての出店の前日に通知」がONだと、上の4箇所チェックは無効になります。</p>
+            <div class="settings-note">
+              <span class="settings-note-icon">💡</span>
+              <span>「すべての出店を通知する」がONの場合、個別の場所選択は無効になります</span>
+            </div>
           </div>
 
-          <button class="settings-btn" id="pushBtn" type="button">🔔 通知を受け取る</button>
+          <button class="settings-btn" id="pushBtn" type="button">
+            🔔 通知を受け取る
+          </button>
           <p id="pushStatus" class="settings-status"></p>
         </div>
       </section>
@@ -340,6 +346,14 @@
 
     function syncPlaceUI() {
       const all = document.getElementById("place_all").checked;
+      const placeOptions = document.querySelectorAll("#placeList .settings-option");
+      placeOptions.forEach(opt => {
+        if (all) {
+          opt.classList.add("disabled");
+        } else {
+          opt.classList.remove("disabled");
+        }
+      });
       document.querySelectorAll(".placeChk").forEach(chk => {
         chk.disabled = all;
         if (all) chk.checked = false;
@@ -366,17 +380,34 @@
 
     async function doPushRegister() {
       const statusEl = document.getElementById("pushStatus");
+      statusEl.className = "settings-status loading";
       statusEl.textContent = "⏳ 登録中…";
 
-      if (!("Notification" in window)) { statusEl.textContent = "❌ このブラウザは通知に未対応"; return; }
+      if (!("Notification" in window)) {
+        statusEl.className = "settings-status error";
+        statusEl.textContent = "❌ このブラウザは通知に未対応";
+        return;
+      }
 
       const reg = await registerSW();
-      if (!reg) { statusEl.textContent = "❌ SW登録に失敗"; return; }
+      if (!reg) {
+        statusEl.className = "settings-status error";
+        statusEl.textContent = "❌ SW登録に失敗";
+        return;
+      }
 
-      if (!reg.pushManager) { statusEl.textContent = "❌ Push未対応（iPhoneはホーム画面に追加してSafariで開く）"; return; }
+      if (!reg.pushManager) {
+        statusEl.className = "settings-status error";
+        statusEl.textContent = "❌ Push未対応（iPhoneはホーム画面に追加してSafariで開く）";
+        return;
+      }
 
       const perm = await Notification.requestPermission();
-      if (perm !== "granted") { statusEl.textContent = "❌ 通知が許可されてない"; return; }
+      if (perm !== "granted") {
+        statusEl.className = "settings-status error";
+        statusEl.textContent = "❌ 通知が許可されていません";
+        return;
+      }
 
       const publicKey = await getVapidPublicKey();
 
@@ -393,13 +424,16 @@
 
       await upsertSubscription(sub, hour, places);
 
-      statusEl.textContent = "✅ 登録OK（通知を送れる状態）";
+      statusEl.className = "settings-status success";
+      statusEl.textContent = "✅ 登録完了！通知が届くようになりました";
     }
 
     document.getElementById("pushBtn").addEventListener("click", () => {
       doPushRegister().catch(err => {
         console.error(err);
-        document.getElementById("pushStatus").textContent = "❌ " + (err?.message || String(err));
+        const statusEl = document.getElementById("pushStatus");
+        statusEl.className = "settings-status error";
+        statusEl.textContent = "❌ " + (err?.message || String(err));
       });
     });
 
