@@ -19,14 +19,46 @@ export async function onRequest({ request, env }) {
     return json({ ok: false, error: "Missing env/bindings in Pages project", missing: miss }, 500, allow);
   }
 
-  let filter = { place: "ALL", hour: null };
+  // リクエストからhourを取得（Cronから来る）
+  let filterHour = null;
   if (request.method === "POST") {
     try {
       const b = await request.json();
-      if (b?.place) filter.place = b.place;
-      if (b?.hour === 18 || b?.hour === 21) filter.hour = b.hour;
+      if (b?.hour === 18 || b?.hour === 21) filterHour = b.hour;
     } catch {}
   }
+
+  // 明日の日付を取得（JST）
+  const now = new Date();
+  const jstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const tomorrow = new Date(jstNow);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split("T")[0]; // "2025-12-22" 形式
+
+  // spots-feed.json を取得
+  let spots = [];
+  try {
+    const feedRes = await fetch("https://kanatae-app.pages.dev/spots-feed.json");
+    spots = await feedRes.json();
+  } catch (e) {
+    return json({ ok: false, error: "Failed to fetch spots-feed.json", detail: e.message }, 500, allow);
+  }
+
+  // 明日の出店を探す
+  const tomorrowSpots = spots.filter(s => s.date === tomorrowStr);
+  
+  if (tomorrowSpots.length === 0) {
+    return json({ 
+      ok: true, 
+      message: "No events tomorrow", 
+      tomorrow: tomorrowStr,
+      total: 0, sent: 0, removed: 0, skipped: 0, failed: 0, errors: [] 
+    }, 200, allow);
+  }
+
+  // 明日の出店場所のplaceIdリスト
+  const tomorrowPlaceIds = tomorrowSpots.map(s => s.placeId);
+  const tomorrowSpotInfo = tomorrowSpots[0]; // 通知に使う情報（複数あれば最初の1つ）
 
   let cursor = undefined;
   let total = 0, sent = 0, removed = 0, skipped = 0, failed = 0;
@@ -47,16 +79,27 @@ export async function onRequest({ request, env }) {
       const endpoint = rec?.endpoint || rec?.subscription?.endpoint;
       if (!endpoint) { skipped++; continue; }
 
-      const places = Array.isArray(rec.places) ? rec.places : ["ALL"];
+      const places = Array.isArray(rec.places) ? rec.places : [];
       const hour = rec.hour ?? null;
 
-      const placeOK = (filter.place === "ALL") || (places.length === 0) || places.includes("ALL") || places.includes(filter.place);
-      const hourOK = (filter.hour == null) || (hour === filter.hour);
-      if (!placeOK || !hourOK) { skipped++; continue; }
+      // hourフィルタ: Cronから指定されたhourと一致するか
+      if (filterHour !== null && hour !== null && hour !== filterHour) {
+        skipped++;
+        continue;
+      }
+
+      // placeフィルタ:
+      // - places が空 = 「全ての出店」を選択 → 常に通知
+      // - places に明日の出店場所が含まれている → 通知
+      const placeOK = (places.length === 0) || places.some(p => tomorrowPlaceIds.includes(p));
+      if (!placeOK) {
+        skipped++;
+        continue;
+      }
 
       try {
         const sub = rec.subscription || { endpoint, keys: rec.keys };
-        const r = await sendWebPush(env, sub);
+        const r = await sendWebPush(env, sub, tomorrowSpotInfo);
         if (r.status === 404 || r.status === 410) {
           await env.KANATAE_PUSH_SUBS.delete(k.name);
           removed++;
@@ -76,18 +119,25 @@ export async function onRequest({ request, env }) {
     if (res.list_complete) break;
   }
 
-  return json({ ok: true, filter, total, sent, removed, skipped, failed, errors }, 200, allow);
+  return json({ 
+    ok: true, 
+    tomorrow: tomorrowStr,
+    tomorrowSpots: tomorrowSpots,
+    filterHour,
+    total, sent, removed, skipped, failed, errors 
+  }, 200, allow);
 }
 
-async function sendWebPush(env, subscription) {
+async function sendWebPush(env, subscription, spotInfo) {
   const endpoint = subscription.endpoint;
   const aud = new URL(endpoint).origin;
   const jwt = await createVapidJWT(env, aud);
   const publicKey = env.VAPID_PUBLIC_KEY;
 
+  // 出店情報を含めた通知内容
   const payload = JSON.stringify({
     title: "おにぎり屋かなたけ",
-    body: "明日の出店のお知らせです🍙",
+    body: `明日は${spotInfo.name}に出店します🍙${spotInfo.time ? `（${spotInfo.time}）` : ""}`,
     url: "/"
   });
 
@@ -217,8 +267,8 @@ async function importVapidPrivateKey(publicB64u, privateB64u) {
   const pub = b64uToBytes(publicB64u);
   const priv = b64uToBytes(privateB64u);
 
-  if (pub.length !== 65 || pub[0] !== 0x04) throw new Error("Invalid VAPID public key (expected 65 bytes, uncompressed)");
-  if (priv.length !== 32) throw new Error("Invalid VAPID private key (expected 32 bytes)");
+  if (pub.length !== 65 || pub[0] !== 0x04) throw new Error("Invalid VAPID public key");
+  if (priv.length !== 32) throw new Error("Invalid VAPID private key");
 
   const x = pub.slice(1, 33);
   const y = pub.slice(33, 65);
@@ -228,44 +278,34 @@ async function importVapidPrivateKey(publicB64u, privateB64u) {
 }
 
 function sigToJose(sig) {
-  // 64バイトならそのまま（すでにJOSE形式）
-  if (sig.length === 64) {
-    return sig;
-  }
-  // DER形式からJOSE形式に変換
-  if (sig[0] === 0x30) {
-    return derToJose(sig);
-  }
-  throw new Error("Unknown signature format, length=" + sig.length);
+  if (sig.length === 64) return sig;
+  if (sig[0] === 0x30) return derToJose(sig);
+  throw new Error("Unknown signature format");
 }
 
 function derToJose(der) {
   let offset = 0;
-  if (der[offset++] !== 0x30) throw new Error("Invalid DER: no SEQUENCE");
+  if (der[offset++] !== 0x30) throw new Error("Invalid DER");
   
   let seqLen = der[offset++];
   if (seqLen & 0x80) {
     const lenBytes = seqLen & 0x7f;
     seqLen = 0;
-    for (let i = 0; i < lenBytes; i++) {
-      seqLen = (seqLen << 8) | der[offset++];
-    }
+    for (let i = 0; i < lenBytes; i++) seqLen = (seqLen << 8) | der[offset++];
   }
 
-  if (der[offset++] !== 0x02) throw new Error("Invalid DER: no INTEGER for r");
+  if (der[offset++] !== 0x02) throw new Error("Invalid DER");
   let rLen = der[offset++];
   let r = der.slice(offset, offset + rLen);
   offset += rLen;
 
-  if (der[offset++] !== 0x02) throw new Error("Invalid DER: no INTEGER for s");
+  if (der[offset++] !== 0x02) throw new Error("Invalid DER");
   let sLen = der[offset++];
   let s = der.slice(offset, offset + sLen);
 
-  // 先頭の0x00パディングを除去
   while (r.length > 32 && r[0] === 0) r = r.slice(1);
   while (s.length > 32 && s[0] === 0) s = s.slice(1);
 
-  // 32バイトに左パディング
   const out = new Uint8Array(64);
   out.set(r, 32 - r.length);
   out.set(s, 64 - s.length);
