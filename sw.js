@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kanatake-v7';
+const CACHE_NAME = 'kanatake-v8';
 
 function getBasePath() {
   const scopeUrl = new URL(self.registration.scope);
@@ -42,7 +42,6 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   const url = new URL(req.url);
 
-  // 同一オリジンのGETだけ
   if (req.method !== 'GET' || url.origin !== self.location.origin) return;
 
   e.respondWith((async () => {
@@ -70,8 +69,15 @@ self.addEventListener('push', (event) => {
 
   const BASE = getBasePath();
   const title = data.title || 'おにぎり屋かなたけ';
-  const body  = data.body  || '明日の出店のお知らせです';
-  const targetUrl = data.url || BASE;
+  const body = data.body || '明日の出店のお知らせです';
+  
+  // url が "/" や相対パスの場合、BASEを付ける
+  let targetUrl = data.url || BASE;
+  if (targetUrl === '/' || targetUrl === '') {
+    targetUrl = BASE;
+  } else if (!targetUrl.startsWith('http') && !targetUrl.startsWith(BASE)) {
+    targetUrl = BASE + targetUrl.replace(/^\//, '');
+  }
 
   const options = {
     body,
