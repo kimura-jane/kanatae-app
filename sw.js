@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kanatake-v8';
+const CACHE_NAME = 'kanatake-v9';
 
 function getBasePath() {
   const scopeUrl = new URL(self.registration.scope);
