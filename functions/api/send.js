@@ -1,49 +1,101 @@
+// functions/api/send.js
 export async function onRequest(context) {
   const { request, env } = context;
+
+  // ---- CORS
   const origin = request.headers.get("Origin") || "";
-  const allow = isAllowedOrigin(origin) ? origin : "https://kimura-jane.github.io";
+  const allowOrigin = getAllowOrigin(origin);
 
   if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders(allow) });
+    return new Response(null, { status: 204, headers: corsHeaders(allowOrigin) });
   }
-
   if (request.method !== "POST") {
-    return json({ ok: false, error: "POST only" }, 405, allow);
+    return json({ ok: false, error: "POST only" }, 405, allowOrigin);
   }
 
-  const list = await env.KANATAE_PUSH_SUBS.list({ prefix: "sub:" });
+  // ---- 最低限の防御（悪用防止）
+  // Cloudflare に ADMIN_TOKEN を設定したら、それが無いと送れないようにする
+  const adminToken = env.ADMIN_TOKEN || "";
+  if (adminToken) {
+    const got = request.headers.get("X-Admin-Token") || "";
+    if (got !== adminToken) {
+      return json({ ok: false, error: "Unauthorized" }, 401, allowOrigin);
+    }
+  }
+
+  // ---- 必須envチェック
+  const miss = missingEnv(env);
+  if (miss.length) {
+    return json({ ok: false, error: "Missing env", missing: miss }, 500, allowOrigin);
+  }
+  if (!env.KANATAE_PUSH_SUBS) {
+    return json(
+      { ok: false, error: "KV binding not found", expected: "env.KANATAE_PUSH_SUBS" },
+      500,
+      allowOrigin
+    );
+  }
+
+  // ---- body（任意）: { endpoint?: string }
+  // endpoint があれば単体送信、なければ全員に送信
+  let body = null;
+  try { body = await request.json(); } catch { body = null; }
+
+  const KV = env.KANATAE_PUSH_SUBS;
+
+  // 単体送信
+  if (body && body.endpoint) {
+    const r = await sendWebPushNoPayload(env, body.endpoint);
+    return json(
+      { ok: r.ok, status: r.status, endpoint: body.endpoint },
+      r.ok ? 200 : 502,
+      allowOrigin
+    );
+  }
+
+  // 全体送信（KVはページングあり）
   let sent = 0;
   let removed = 0;
+  let total = 0;
 
-  for (const k of list.keys) {
-    const raw = await env.KANATAE_PUSH_SUBS.get(k.name);
-    if (!raw) continue;
+  let cursor = undefined;
+  for (let page = 0; page < 50; page++) {
+    const list = await KV.list({ prefix: "sub:", limit: 1000, cursor });
+    total += list.keys.length;
 
-    let sub;
-    try { sub = JSON.parse(raw); } catch { continue; }
-    if (!sub.endpoint) continue;
+    for (const k of list.keys) {
+      const raw = await KV.get(k.name);
+      if (!raw) continue;
 
-    const res = await sendWebPushNoPayload(env, sub.endpoint);
+      let rec;
+      try { rec = JSON.parse(raw); } catch { continue; }
 
-    // endpointが死んでる（410/404）なら掃除
-    if (res.status === 404 || res.status === 410) {
-      await env.KANATAE_PUSH_SUBS.delete(k.name);
-      removed++;
-      continue;
+      // subscribe.js が {subscription:...} を保存する想定
+      const endpoint = rec?.subscription?.endpoint || rec?.endpoint || null;
+      if (!endpoint) continue;
+
+      const res = await sendWebPushNoPayload(env, endpoint);
+
+      // endpointが死んでる（410/404）なら掃除
+      if (res.status === 404 || res.status === 410) {
+        await KV.delete(k.name);
+        removed++;
+        continue;
+      }
+      if (res.ok) sent++;
     }
 
-    if (res.ok) sent++;
+    if (list.list_complete) break;
+    cursor = list.cursor;
   }
 
-  return json({ ok: true, sent, removed, total: list.keys.length }, 200, allow);
+  return json({ ok: true, sent, removed, total }, 200, allowOrigin);
 }
 
 async function sendWebPushNoPayload(env, endpoint) {
   const aud = new URL(endpoint).origin;
   const jwt = await createVapidJWT(env, aud);
-
-  // VAPID の公開鍵は base64url 文字列のままヘッダへ
-  const publicKey = env.VAPID_PUBLIC_KEY;
+  const publicKey = env.VAPID_PUBLIC_KEY; // base64url
 
   return fetch(endpoint, {
     method: "POST",
@@ -113,8 +165,61 @@ async function importVapidPrivateKey(publicB64u, privateB64u) {
   );
 }
 
+function missingEnv(env) {
+  const need = ["VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT"];
+  return need.filter((k) => !env[k]);
+}
+
+function getAllowOrigin(origin) {
+  const allowed = [
+    "https://kimura-jane.github.io",
+    "https://kanatae-app.pages.dev",
+  ];
+  return allowed.includes(origin) ? origin : "";
+}
+
+function corsHeaders(allowOrigin) {
+  const h = {
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-Admin-Token",
+    "Access-Control-Max-Age": "86400",
+    "Vary": "Origin",
+  };
+  if (allowOrigin) h["Access-Control-Allow-Origin"] = allowOrigin;
+  return h;
+}
+
+function json(obj, status, allowOrigin) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: {
+      ...corsHeaders(allowOrigin),
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+function b64u(str) {
+  return b64uBytes(new TextEncoder().encode(str));
+}
+
+function b64uBytes(bytes) {
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function b64uToBytes(s) {
+  s = s.replace(/-/g, "+").replace(/_/g, "/");
+  while (s.length % 4) s += "=";
+  const bin = atob(s);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
 function derToJose(derSig, joseLen) {
-  // ASN.1 DER ECDSA signature -> JOSE (R||S)
   let offset = 0;
   if (derSig[offset++] !== 0x30) throw new Error("Invalid DER");
   let seqLen = derSig[offset++];
@@ -153,49 +258,4 @@ function leftPad(bytes, len) {
   const out = new Uint8Array(len);
   out.set(bytes, len - bytes.length);
   return out;
-}
-
-function b64u(str) {
-  return b64uBytes(new TextEncoder().encode(str));
-}
-
-function b64uBytes(bytes) {
-  let bin = "";
-  for (const b of bytes) bin += String.fromCharCode(b);
-  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-
-function b64uToBytes(s) {
-  s = s.replace(/-/g, "+").replace(/_/g, "/");
-  while (s.length % 4) s += "=";
-  const bin = atob(s);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
-
-function isAllowedOrigin(origin) {
-  return [
-    "https://kimura-jane.github.io",
-    "https://kanatae-app.pages.dev",
-  ].includes(origin);
-}
-
-function corsHeaders(allowOrigin) {
-  return {
-    "access-control-allow-origin": allowOrigin,
-    "access-control-allow-methods": "GET,POST,OPTIONS",
-    "access-control-allow-headers": "content-type",
-  };
-}
-
-function json(obj, status, allowOrigin) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: {
-      ...corsHeaders(allowOrigin),
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store",
-    },
-  });
 }
