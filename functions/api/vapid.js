@@ -1,47 +1,40 @@
-// functions/api/vapid.js
-export async function onRequest(context) {
-  const { request, env } = context;
-
+export async function onRequest({ request, env }) {
   const origin = request.headers.get("Origin") || "";
-  const allowOrigin = getAllowOrigin(origin);
+  const allow = isAllowedOrigin(origin) ? origin : "https://kanatae-app.pages.dev";
 
   if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders(allowOrigin) });
+    return new Response(null, { status: 204, headers: corsHeaders(allow) });
   }
 
-  if (!env.VAPID_PUBLIC_KEY) {
-    return json({ ok: false, error: "VAPID_PUBLIC_KEY is missing in Worker/Pages Variables" }, 500, allowOrigin);
+  const publicKey = env.VAPID_PUBLIC_KEY || "";
+  if (!publicKey) {
+    return json({ ok: false, error: "VAPID_PUBLIC_KEY is missing in Pages env" }, 500, allow);
   }
 
-  return json({ ok: true, publicKey: env.VAPID_PUBLIC_KEY }, 200, allowOrigin);
+  return json({ ok: true, publicKey }, 200, allow);
 }
 
-function getAllowOrigin(origin) {
-  const allowed = [
+function isAllowedOrigin(origin) {
+  return [
     "https://kimura-jane.github.io",
     "https://kanatae-app.pages.dev",
-  ];
-  return allowed.includes(origin) ? origin : "";
+  ].includes(origin);
 }
-
 function corsHeaders(allowOrigin) {
-  const h = {
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Max-Age": "86400",
-    "Vary": "Origin",
+  return {
+    "access-control-allow-origin": allowOrigin,
+    "access-control-allow-methods": "GET,POST,OPTIONS",
+    "access-control-allow-headers": "content-type",
+    "vary": "Origin",
   };
-  if (allowOrigin) h["Access-Control-Allow-Origin"] = allowOrigin;
-  return h;
 }
-
 function json(obj, status, allowOrigin) {
-  return new Response(JSON.stringify(obj), {
+  return new Response(JSON.stringify(obj, null, 2), {
     status,
     headers: {
       ...corsHeaders(allowOrigin),
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
     },
   });
 }
