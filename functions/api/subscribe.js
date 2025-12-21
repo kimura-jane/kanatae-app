@@ -1,82 +1,73 @@
-// functions/api/subscribe.js
-export async function onRequest(context) {
-  const { request, env } = context;
-
+export async function onRequest({ request, env }) {
   const origin = request.headers.get("Origin") || "";
-  const allowOrigin = getAllowOrigin(origin);
+  const allow = isAllowedOrigin(origin) ? origin : "https://kanatae-app.pages.dev";
 
   if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders(allowOrigin) });
+    return new Response(null, { status: 204, headers: corsHeaders(allow) });
   }
   if (request.method !== "POST") {
-    return json({ ok: false, error: "POST only" }, 405, allowOrigin);
+    return json({ ok: false, error: "POST only" }, 405, allow);
   }
+
   if (!env.KANATAE_PUSH_SUBS) {
-    return json(
-      { ok: false, error: "KV binding not found", expected: "env.KANATAE_PUSH_SUBS" },
-      500,
-      allowOrigin
-    );
+    return json({ ok:false, error:"KV binding not found", expected:"env.KANATAE_PUSH_SUBS" }, 500, allow);
   }
 
-  let payload;
-  try { payload = await request.json(); }
-  catch { return json({ ok: false, error: "Invalid JSON" }, 400, allowOrigin); }
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ ok:false, error:"Invalid JSON" }, 400, allow);
+  }
 
-  const subscription = payload?.subscription;
+  const subscription = body?.subscription;
   if (!subscription?.endpoint) {
-    return json({ ok: false, error: "subscription.endpoint required" }, 400, allowOrigin);
+    return json({ ok:false, error:"subscription.endpoint required" }, 400, allow);
   }
 
-  // ここから下は「場所/時間」拡張に耐えるように保存形式を統一
-  const places = Array.isArray(payload?.places) ? payload.places : [];
-  const mode = payload?.mode === "selected" ? "selected" : "all";
-  const hour = (payload?.hour === 18 || payload?.hour === 21) ? payload.hour : null;
+  // 通知条件（複数選択）
+  const places = Array.isArray(body.places) ? body.places : ["ALL"];
+  const hour = body.hour === 18 ? 18 : (body.hour === 21 ? 21 : 21);
 
-  const key = "sub:" + (await sha256Hex(subscription.endpoint));
+  const id = await sha256Hex(subscription.endpoint);
+  const key = `sub:${id}`;
+
   const record = {
     subscription,
-    mode,          // "all" or "selected"
-    places,        // 例: ["川口さくら病院", ...]
-    hour,          // 18 or 21 or null
+    endpoint: subscription.endpoint,
+    places,
+    hour,
     updatedAt: new Date().toISOString(),
   };
 
   await env.KANATAE_PUSH_SUBS.put(key, JSON.stringify(record));
-
-  return json({ ok: true, key }, 200, allowOrigin);
+  return json({ ok:true, key }, 200, allow);
 }
 
-function getAllowOrigin(origin) {
-  const allowed = [
+function isAllowedOrigin(origin) {
+  return [
     "https://kimura-jane.github.io",
     "https://kanatae-app.pages.dev",
-  ];
-  return allowed.includes(origin) ? origin : "";
+  ].includes(origin);
 }
-
 function corsHeaders(allowOrigin) {
-  const h = {
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Max-Age": "86400",
-    "Vary": "Origin",
+  return {
+    "access-control-allow-origin": allowOrigin,
+    "access-control-allow-methods": "GET,POST,OPTIONS",
+    "access-control-allow-headers": "content-type",
+    "vary": "Origin",
   };
-  if (allowOrigin) h["Access-Control-Allow-Origin"] = allowOrigin;
-  return h;
 }
-
 function json(obj, status, allowOrigin) {
-  return new Response(JSON.stringify(obj), {
+  return new Response(JSON.stringify(obj, null, 2), {
     status,
     headers: {
       ...corsHeaders(allowOrigin),
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
     },
   });
 }
-
 async function sha256Hex(text) {
   const enc = new TextEncoder().encode(text);
   const digest = await crypto.subtle.digest("SHA-256", enc);
