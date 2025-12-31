@@ -1,5 +1,9 @@
 [
-  { "date": "2025-12-25", "placeId": "saitama_cityhall", "name": "さいたま市役所 浦和本庁舎" },
-  { "date": "2025-12-30", "placeId": "sakura_hospital", "name": "川口さくら病院", "time": "11:00-14:00" },
-  { "date": "2025-12-31", "placeId": "dynam_togasaki", "name": "ダイナム戸ヶ崎店" }
+  { "date": "2026-01-06", "placeId": "dynam_togasaki", "name": "ダイナム戸ヶ崎店" },
+  { "date": "2026-01-07", "placeId": "dokkyo", "name": "獨協大学 草加キャンパス（のり弁）" },
+  { "date": "2026-01-13", "placeId": "sakura_hospital", "name": "川口さくら病院（川口市神戸258-1／のり弁）", "time": "11:00-14:00" },
+  { "date": "2026-01-14", "placeId": "dokkyo", "name": "獨協大学 草加キャンパス" },
+  { "date": "2026-01-20", "placeId": "dynam_togasaki", "name": "ダイナム戸ヶ崎店" },
+  { "date": "2026-01-21", "placeId": "saitama_cityhall", "name": "さいたま市役所 浦和本庁舎（のり弁）" },
+  { "date": "2026-01-27", "placeId": "sakura_hospital", "name": "川口さくら病院（川口市神戸258-1／のり弁）", "time": "11:00-14:00" }
 ]
