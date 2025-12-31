@@ -16,11 +16,11 @@
 
   <link rel="stylesheet" href="style.css">
 
-  <!-- ★重要：データは spots-all.js を基準にする（キャッシュ対策で ?v を付与） -->
-  <script src="spots-all.js?v=20260101" defer></script>
+  <!-- ★重要：データは spots-all.js（window.spotsAllByYear）を基準にする -->
+  <script src="spots-all.js?v=20260102" defer></script>
 
-  <!-- map 用（window.spots を使ってるなら残す。使ってないなら後で削除可） -->
-  <script src="spots.js?v=20260101" defer></script>
+  <!-- map 用（window.spots を使うなら残す。無い場合は全体から自動で作るのであってもOK） -->
+  <script src="spots.js?v=20260102" defer></script>
 </head>
 
 <body>
@@ -83,7 +83,7 @@
       <section class="tab-pane" id="settings">
         <div class="settings">
           <h2 class="settings-title">🔔 通知設定</h2>
-          
+
           <div class="settings-card">
             <p class="settings-card-title">⏰ 通知する時間</p>
             <label class="settings-option">
@@ -179,11 +179,10 @@
     let currentYear = 2025;
     let currentMonth = 12;
 
-    // 表示できる年月の範囲（データから自動算出）
-    let minYM = null; // {y, m}
-    let maxYM = null; // {y, m}
-
+    let minYM = null; // {y,m}
+    let maxYM = null; // {y,m}
     function ymToNum(y, m) { return y * 100 + m; }
+
     function clampYM(y, m) {
       if (!minYM || !maxYM) return { y, m };
       const n = ymToNum(y, m);
@@ -194,18 +193,45 @@
       return { y, m };
     }
 
-    // ★データ取得：年＋月で必ず絞る（ここが混ざりの根本原因を潰す）
-    function getSpotsForYM(year, month) {
-      // 推奨：spots-all.js 側で window.getSpotsForYM / spotsAllYearly を用意する
-      if (typeof window.getSpotsForYM === "function") {
-        return window.getSpotsForYM(year, month) || [];
+    // ---- Data helpers（spotsAllByYearを正式対応）----
+    function getAllSpotsFlat() {
+      // 1) map 用の window.spots があればそれ（互換）
+      if (Array.isArray(window.spots) && window.spots.length) return window.spots;
+
+      // 2) spotsAllByYear を平坦化
+      if (window.spotsAllByYear && typeof window.spotsAllByYear === 'object') {
+        const years = Object.keys(window.spotsAllByYear).map(Number).filter(n => Number.isFinite(n)).sort((a,b)=>a-b);
+        const flat = [];
+        years.forEach(y => {
+          const arr = window.spotsAllByYear[y] || [];
+          arr.forEach(s => flat.push({ ...s, year: y }));
+        });
+        return flat;
       }
 
-      const spots = window.spotsAllYearly || window.spotsAll || [];
-      return spots.filter(spot => {
-        // year が付いてるデータは年一致で絞る（必須）
-        if (spot.year != null && Number(spot.year) !== Number(year)) return false;
+      // 3) 旧形式
+      if (Array.isArray(window.spotsAllYearly) && window.spotsAllYearly.length) return window.spotsAllYearly;
+      if (Array.isArray(window.spotsAll) && window.spotsAll.length) return window.spotsAll;
 
+      return [];
+    }
+
+    function getSpotsForYM(year, month) {
+      // spotsAllByYear があるなら、それを基準に “年＋月” で確実に絞る
+      if (window.spotsAllByYear && typeof window.spotsAllByYear === 'object') {
+        const arr = window.spotsAllByYear[year] || [];
+        return arr.filter(spot => {
+          const match = (spot.date || "").match(/(\d+)\/(\d+)/);
+          if (!match) return false;
+          const m = parseInt(match[1], 10);
+          return m === month;
+        });
+      }
+
+      // fallback（旧形式）
+      const spots = getAllSpotsFlat();
+      return spots.filter(spot => {
+        if (spot.year != null && Number(spot.year) !== Number(year)) return false;
         const match = (spot.date || "").match(/(\d+)\/(\d+)/);
         if (!match) return false;
         const m = parseInt(match[1], 10);
@@ -213,7 +239,6 @@
       });
     }
 
-    // 月のイベントを「日→配列」で返す
     function getEventsForMonth(year, month) {
       const spots = getSpotsForYM(year, month);
       const events = {};
@@ -227,27 +252,18 @@
       return events;
     }
 
-    function getShortName(name) {
-      const shortcuts = {
-        '川口さくら病院': 'さくら病院',
-        '獨協大学 草加キャンパス': '獨協大学',
-        'さいたま市役所 浦和本庁舎': 'さいたま市役所',
-        'ダイナム戸ヶ崎店': 'ダイナム'
-      };
-      return shortcuts[name] || (name || "").substring(0, 6);
-    }
-
-    // データから min/max の年月を決める（年混ざり/消える問題の再発防止）
     function computeMinMaxYM() {
-      const list = window.spotsAllYearly || window.spotsAll || [];
+      const list = getAllSpotsFlat();
       let minN = Infinity, maxN = -Infinity;
 
       list.forEach(spot => {
+        const y = Number(spot.year);
+        if (!Number.isFinite(y)) return;
+
         const match = (spot.date || "").match(/(\d+)\/(\d+)/);
         if (!match) return;
         const m = parseInt(match[1], 10);
-        const y = (spot.year != null) ? Number(spot.year) : null;
-        if (!y) return; // year無しだと範囲計算が不正確になるので無視（spots-all.js側でyear付与する前提）
+        if (!(m >= 1 && m <= 12)) return;
 
         const n = ymToNum(y, m);
         if (n < minN) minN = n;
@@ -255,8 +271,7 @@
       });
 
       if (!isFinite(minN) || !isFinite(maxN)) {
-        minYM = null;
-        maxYM = null;
+        minYM = null; maxYM = null;
         return;
       }
 
@@ -274,6 +289,16 @@
       nextBtn.disabled = curN >= ymToNum(maxYM.y, maxYM.m);
     }
 
+    function getShortName(name) {
+      const shortcuts = {
+        '川口さくら病院': 'さくら病院',
+        '獨協大学 草加キャンパス': '獨協大学',
+        'さいたま市役所 浦和本庁舎': 'さいたま市役所',
+        'ダイナム戸ヶ崎店': 'ダイナム'
+      };
+      return shortcuts[name] || (name || "").substring(0, 6);
+    }
+
     function renderCalendar() {
       const title = document.getElementById('calendarTitle');
       const grid = document.getElementById('calendarGrid');
@@ -286,8 +311,9 @@
       const startDow = firstDay.getDay();
 
       const events = getEventsForMonth(currentYear, currentMonth);
+
       const today = new Date();
-      const isCurrentMonth = today.getFullYear() === currentYear && today.getMonth() + 1 === currentMonth;
+      const isCurrentMonth = today.getFullYear() === currentYear && (today.getMonth() + 1) === currentMonth;
       const todayDate = today.getDate();
 
       let html = ['日','月','火','水','木','金','土'].map(d => `<div class="calendar-dow">${d}</div>`).join('');
@@ -296,6 +322,7 @@
       for (let d = 1; d <= daysInMonth; d++) {
         const hasEvent = !!(events[d] && events[d].length);
         const isToday = isCurrentMonth && d === todayDate;
+
         let classes = 'calendar-day';
         if (hasEvent) classes += ' has-event';
         if (isToday) classes += ' today';
@@ -308,6 +335,7 @@
       }
 
       grid.innerHTML = html;
+
       grid.querySelectorAll('.calendar-day.has-event').forEach(el => {
         el.addEventListener('click', () => {
           const day = parseInt(el.dataset.day, 10);
@@ -322,7 +350,6 @@
       const modal = document.getElementById('modal');
       const event = eventList[0];
 
-      // ★年も表示（混乱防止）
       document.getElementById('modalDate').textContent = `${currentYear}年${currentMonth}月${day}日`;
       document.getElementById('modalTitle').textContent = event.name;
       document.getElementById('modalTime').textContent = event.time || '時間未定';
@@ -345,41 +372,38 @@
 
     document.getElementById('prevMonth').addEventListener('click', () => {
       if (minYM && ymToNum(currentYear, currentMonth) <= ymToNum(minYM.y, minYM.m)) return;
-
       currentMonth--;
       if (currentMonth < 1) { currentMonth = 12; currentYear--; }
-
       const clamped = clampYM(currentYear, currentMonth);
       currentYear = clamped.y; currentMonth = clamped.m;
-
       renderCalendar();
     });
 
     document.getElementById('nextMonth').addEventListener('click', () => {
       if (maxYM && ymToNum(currentYear, currentMonth) >= ymToNum(maxYM.y, maxYM.m)) return;
-
       currentMonth++;
       if (currentMonth > 12) { currentMonth = 1; currentYear++; }
-
       const clamped = clampYM(currentYear, currentMonth);
       currentYear = clamped.y; currentMonth = clamped.m;
-
       renderCalendar();
     });
 
     function initCalendarRangeAndStartMonth() {
-      // まず範囲計算（spots-all.js 側で year 付与されてる前提）
       computeMinMaxYM();
 
-      // 初期表示：基本は今日。ただしデータ範囲外なら範囲内に丸める
       const t = new Date();
       const desired = clampYM(t.getFullYear(), t.getMonth() + 1);
       currentYear = desired.y;
       currentMonth = desired.m;
+
+      // データがあるなら “最後の月” を初期表示にしたい場合はこっち
+      // if (maxYM) { currentYear = maxYM.y; currentMonth = maxYM.m; }
     }
 
     // ===== map =====
     function initMap() {
+      if (!window.L) return; // Leaflet 未ロード時の保険
+
       mapInstance = L.map('map').setView([35.75, 139.75], 10);
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '© OSM © CARTO'
@@ -387,8 +411,7 @@
 
       const icon = L.icon({ iconUrl: 'icon.png', iconSize: [44, 44], iconAnchor: [22, 32], popupAnchor: [0, -28] });
 
-      // map は従来互換：window.spots があればそれ、無ければ全体から（落ちないように）
-      const spots = window.spots || window.spotsAllYearly || window.spotsAll || [];
+      const spots = getAllSpotsFlat();
       const list = document.getElementById('spotList');
       list.innerHTML = "";
       markersArray = [];
@@ -396,13 +419,13 @@
       spots.forEach((s, i) => {
         if (s.lat && s.lng) {
           const m = L.marker([s.lat, s.lng], { icon }).addTo(mapInstance).bindPopup(
-            `<strong>${s.name}</strong><br>${s.date}${s.time ? ' ・ ' + s.time : ''}<br>` +
+            `<strong>${s.name}</strong><br>${s.year ? (s.year + '年') : ''}${s.date}${s.time ? ' ・ ' + s.time : ''}<br>` +
             `<a href="https://www.google.com/maps?q=${s.lat},${s.lng}" target="_blank">Googleマップで開く</a>`
           );
           markersArray[i] = m;
         }
         const li = document.createElement('li');
-        li.innerHTML = `<span class="spot-name">${s.name}</span> <span class="badge">${s.date}</span>`;
+        li.innerHTML = `<span class="spot-name">${s.name}</span> <span class="badge">${s.year ? (s.year + '/') : ''}${s.date}</span>`;
         li.addEventListener('click', () => {
           if (markersArray[i]) {
             mapInstance.setView(markersArray[i].getLatLng(), 14, { animate: true });
