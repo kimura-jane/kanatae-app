@@ -15,8 +15,12 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 
   <link rel="stylesheet" href="style.css">
-  <script src="spots.js" defer></script>
-  <script src="spots-all.js" defer></script>
+
+  <!-- ★重要：データは spots-all.js を基準にする（キャッシュ対策で ?v を付与） -->
+  <script src="spots-all.js?v=20260101" defer></script>
+
+  <!-- map 用（window.spots を使ってるなら残す。使ってないなら後で削除可） -->
+  <script src="spots.js?v=20260101" defer></script>
 </head>
 
 <body>
@@ -41,7 +45,7 @@
         <div class="calendar">
           <div class="calendar-header">
             <button class="calendar-nav" id="prevMonth">◀</button>
-            <h2 class="calendar-title" id="calendarTitle">2025年12月</h2>
+            <h2 class="calendar-title" id="calendarTitle">----</h2>
             <button class="calendar-nav" id="nextMonth">▶</button>
           </div>
           <div class="calendar-grid" id="calendarGrid"></div>
@@ -175,15 +179,48 @@
     let currentYear = 2025;
     let currentMonth = 12;
 
+    // 表示できる年月の範囲（データから自動算出）
+    let minYM = null; // {y, m}
+    let maxYM = null; // {y, m}
+
+    function ymToNum(y, m) { return y * 100 + m; }
+    function clampYM(y, m) {
+      if (!minYM || !maxYM) return { y, m };
+      const n = ymToNum(y, m);
+      const minN = ymToNum(minYM.y, minYM.m);
+      const maxN = ymToNum(maxYM.y, maxYM.m);
+      if (n < minN) return { y: minYM.y, m: minYM.m };
+      if (n > maxN) return { y: maxYM.y, m: maxYM.m };
+      return { y, m };
+    }
+
+    // ★データ取得：年＋月で必ず絞る（ここが混ざりの根本原因を潰す）
+    function getSpotsForYM(year, month) {
+      // 推奨：spots-all.js 側で window.getSpotsForYM / spotsAllYearly を用意する
+      if (typeof window.getSpotsForYM === "function") {
+        return window.getSpotsForYM(year, month) || [];
+      }
+
+      const spots = window.spotsAllYearly || window.spotsAll || [];
+      return spots.filter(spot => {
+        // year が付いてるデータは年一致で絞る（必須）
+        if (spot.year != null && Number(spot.year) !== Number(year)) return false;
+
+        const match = (spot.date || "").match(/(\d+)\/(\d+)/);
+        if (!match) return false;
+        const m = parseInt(match[1], 10);
+        return m === month;
+      });
+    }
+
+    // 月のイベントを「日→配列」で返す
     function getEventsForMonth(year, month) {
-      const spots = window.spotsAll || [];
+      const spots = getSpotsForYM(year, month);
       const events = {};
       spots.forEach(spot => {
         const match = (spot.date || "").match(/(\d+)\/(\d+)/);
         if (!match) return;
-        const m = parseInt(match[1], 10);
         const d = parseInt(match[2], 10);
-        if (m !== month) return;
         if (!events[d]) events[d] = [];
         events[d].push(spot);
       });
@@ -198,6 +235,43 @@
         'ダイナム戸ヶ崎店': 'ダイナム'
       };
       return shortcuts[name] || (name || "").substring(0, 6);
+    }
+
+    // データから min/max の年月を決める（年混ざり/消える問題の再発防止）
+    function computeMinMaxYM() {
+      const list = window.spotsAllYearly || window.spotsAll || [];
+      let minN = Infinity, maxN = -Infinity;
+
+      list.forEach(spot => {
+        const match = (spot.date || "").match(/(\d+)\/(\d+)/);
+        if (!match) return;
+        const m = parseInt(match[1], 10);
+        const y = (spot.year != null) ? Number(spot.year) : null;
+        if (!y) return; // year無しだと範囲計算が不正確になるので無視（spots-all.js側でyear付与する前提）
+
+        const n = ymToNum(y, m);
+        if (n < minN) minN = n;
+        if (n > maxN) maxN = n;
+      });
+
+      if (!isFinite(minN) || !isFinite(maxN)) {
+        minYM = null;
+        maxYM = null;
+        return;
+      }
+
+      minYM = { y: Math.floor(minN / 100), m: minN % 100 };
+      maxYM = { y: Math.floor(maxN / 100), m: maxN % 100 };
+    }
+
+    function updateNavDisabled() {
+      const prevBtn = document.getElementById('prevMonth');
+      const nextBtn = document.getElementById('nextMonth');
+      if (!minYM || !maxYM) { prevBtn.disabled = false; nextBtn.disabled = false; return; }
+
+      const curN = ymToNum(currentYear, currentMonth);
+      prevBtn.disabled = curN <= ymToNum(minYM.y, minYM.m);
+      nextBtn.disabled = curN >= ymToNum(maxYM.y, maxYM.m);
     }
 
     function renderCalendar() {
@@ -240,12 +314,16 @@
           showEventModal(day, events[day]);
         });
       });
+
+      updateNavDisabled();
     }
 
     function showEventModal(day, eventList) {
       const modal = document.getElementById('modal');
       const event = eventList[0];
-      document.getElementById('modalDate').textContent = `${currentMonth}月${day}日`;
+
+      // ★年も表示（混乱防止）
+      document.getElementById('modalDate').textContent = `${currentYear}年${currentMonth}月${day}日`;
       document.getElementById('modalTitle').textContent = event.name;
       document.getElementById('modalTime').textContent = event.time || '時間未定';
 
@@ -266,13 +344,39 @@
     });
 
     document.getElementById('prevMonth').addEventListener('click', () => {
-      currentMonth--; if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+      if (minYM && ymToNum(currentYear, currentMonth) <= ymToNum(minYM.y, minYM.m)) return;
+
+      currentMonth--;
+      if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+
+      const clamped = clampYM(currentYear, currentMonth);
+      currentYear = clamped.y; currentMonth = clamped.m;
+
       renderCalendar();
     });
+
     document.getElementById('nextMonth').addEventListener('click', () => {
-      currentMonth++; if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+      if (maxYM && ymToNum(currentYear, currentMonth) >= ymToNum(maxYM.y, maxYM.m)) return;
+
+      currentMonth++;
+      if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+
+      const clamped = clampYM(currentYear, currentMonth);
+      currentYear = clamped.y; currentMonth = clamped.m;
+
       renderCalendar();
     });
+
+    function initCalendarRangeAndStartMonth() {
+      // まず範囲計算（spots-all.js 側で year 付与されてる前提）
+      computeMinMaxYM();
+
+      // 初期表示：基本は今日。ただしデータ範囲外なら範囲内に丸める
+      const t = new Date();
+      const desired = clampYM(t.getFullYear(), t.getMonth() + 1);
+      currentYear = desired.y;
+      currentMonth = desired.m;
+    }
 
     // ===== map =====
     function initMap() {
@@ -283,9 +387,11 @@
 
       const icon = L.icon({ iconUrl: 'icon.png', iconSize: [44, 44], iconAnchor: [22, 32], popupAnchor: [0, -28] });
 
-      const spots = window.spots || [];
+      // map は従来互換：window.spots があればそれ、無ければ全体から（落ちないように）
+      const spots = window.spots || window.spotsAllYearly || window.spotsAll || [];
       const list = document.getElementById('spotList');
       list.innerHTML = "";
+      markersArray = [];
 
       spots.forEach((s, i) => {
         if (s.lat && s.lng) {
@@ -348,11 +454,8 @@
       const all = document.getElementById("place_all").checked;
       const placeOptions = document.querySelectorAll("#placeList .settings-option");
       placeOptions.forEach(opt => {
-        if (all) {
-          opt.classList.add("disabled");
-        } else {
-          opt.classList.remove("disabled");
-        }
+        if (all) opt.classList.add("disabled");
+        else opt.classList.remove("disabled");
       });
       document.querySelectorAll(".placeChk").forEach(chk => {
         chk.disabled = all;
@@ -439,7 +542,11 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       syncPlaceUI();
+
+      // ★ここが重要：データ範囲を読んでから表示開始
+      initCalendarRangeAndStartMonth();
       renderCalendar();
+
       registerSW().catch(() => {});
     });
   </script>
