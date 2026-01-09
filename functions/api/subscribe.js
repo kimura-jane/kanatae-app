@@ -14,20 +14,22 @@ export async function onRequest({ request, env }) {
   }
 
   let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ ok:false, error:"Invalid JSON" }, 400, allow);
-  }
+  try { body = await request.json(); }
+  catch { return json({ ok:false, error:"Invalid JSON" }, 400, allow); }
 
   const subscription = body?.subscription;
   if (!subscription?.endpoint) {
     return json({ ok:false, error:"subscription.endpoint required" }, 400, allow);
   }
 
-  // 通知条件（複数選択）
-  const places = Array.isArray(body.places) ? body.places : ["ALL"];
-  const hour = body.hour === 18 ? 18 : (body.hour === 21 ? 21 : 21);
+  // hour は 18/21 のみ
+  const hour = body.hour === 18 ? 18 : 21;
+
+  // places:
+  // - "ALL" を受け取ったら「空配列＝全部」に統一
+  // - 未指定も「空配列＝全部」に統一
+  const rawPlaces = Array.isArray(body.places) ? body.places : [];
+  const places = rawPlaces.includes("ALL") ? [] : rawPlaces;
 
   const id = await sha256Hex(subscription.endpoint);
   const key = `sub:${id}`;
@@ -35,13 +37,13 @@ export async function onRequest({ request, env }) {
   const record = {
     subscription,
     endpoint: subscription.endpoint,
-    places,
+    places,   // ← 空配列なら「全部」
     hour,
     updatedAt: new Date().toISOString(),
   };
 
   await env.KANATAE_PUSH_SUBS.put(key, JSON.stringify(record));
-  return json({ ok:true, key }, 200, allow);
+  return json({ ok:true, key, saved: { hour, placesCount: places.length } }, 200, allow);
 }
 
 function isAllowedOrigin(origin) {
