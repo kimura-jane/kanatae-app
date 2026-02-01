@@ -17,10 +17,10 @@
   <link rel="stylesheet" href="style.css">
 
   <!-- ★重要：データは spots-all.js（window.spotsAllByYear）を基準にする -->
-  <script src="spots-all.js?v=20260102" defer></script>
+  <script src="spots-all.js?v=20260201" defer></script>
 
   <!-- map 用（window.spots を使うなら残す。無い場合は全体から自動で作るのであってもOK） -->
-  <script src="spots.js?v=20260102" defer></script>
+  <script src="spots.js?v=20260201" defer></script>
 </head>
 
 <body>
@@ -217,7 +217,7 @@
     }
 
     function getSpotsForYM(year, month) {
-      // spotsAllByYear があるなら、それを基準に “年＋月” で確実に絞る
+      // spotsAllByYear があるなら、それを基準に "年＋月" で確実に絞る
       if (window.spotsAllByYear && typeof window.spotsAllByYear === 'object') {
         const arr = window.spotsAllByYear[year] || [];
         return arr.filter(spot => {
@@ -396,7 +396,7 @@
       currentYear = desired.y;
       currentMonth = desired.m;
 
-      // データがあるなら “最後の月” を初期表示にしたい場合はこっち
+      // データがあるなら "最後の月" を初期表示にしたい場合はこっち
       // if (maxYM) { currentYear = maxYM.y; currentMonth = maxYM.m; }
     }
 
