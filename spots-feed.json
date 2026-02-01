@@ -1,170 +1,157 @@
-[
+// spots-feed.js
+// 2026年2月 出店フィードデータ
+
+window.spotsFeed = [
   {
-    "date": "2026-01-03",
-    "placeId": "drum_no_sato",
-    "name": "ドラムの里（千葉県印旛郡栄町龍角寺1039-1）",
-    "time": "",
-    "lat": 35.823447,
-    "lng": 140.273911
+    date: "2026-02-01",
+    placeId: "mizumoto_park",
+    name: "水元公園",
+    time: "",
+    lat: 35.788554,
+    lng: 139.869452
   },
   {
-    "date": "2026-01-04",
-    "placeId": "mizumoto_park",
-    "name": "水元公園",
-    "time": "",
-    "lat": 35.786408,
-    "lng": 139.869253
+    date: "2026-02-03",
+    placeId: "dynam_misato_togasaki",
+    name: "ダイナム三郷戸ヶ崎店",
+    time: "",
+    lat: 35.799011,
+    lng: 139.867575
   },
   {
-    "date": "2026-01-06",
-    "placeId": "dynam_togasaki",
-    "name": "ダイナム戸ヶ崎店",
-    "time": "",
-    "lat": 35.7990108,
-    "lng": 139.86757478
+    date: "2026-02-04",
+    placeId: "shinagawa_city_hall_noriben",
+    name: "品川区役所 総合庁舎（のり弁）",
+    time: "",
+    lat: 35.609170,
+    lng: 139.730170
   },
   {
-    "date": "2026-01-07",
-    "placeId": "dokkyo_soka_noriben",
-    "name": "獨協大学 草加キャンパス（のり弁）",
-    "time": "",
-    "lat": 35.839861,
-    "lng": 139.794333
+    date: "2026-02-05",
+    placeId: "saitama_urawa_cityhall_noriben",
+    name: "さいたま市役所 浦和本庁舎（のり弁）",
+    time: "",
+    lat: 35.861670,
+    lng: 139.645280
   },
   {
-    "date": "2026-01-08",
-    "placeId": "st_lukes",
-    "name": "聖路加国際大学",
-    "time": "",
-    "lat": 35.667876,
-    "lng": 139.775819
+    date: "2026-02-07",
+    placeId: "mizumoto_park",
+    name: "水元公園",
+    time: "",
+    lat: 35.788554,
+    lng: 139.869452
   },
   {
-    "date": "2026-01-10",
-    "placeId": "higashi_ayase_park",
-    "name": "東綾瀬公園",
-    "time": "",
-    "lat": 35.769967,
-    "lng": 139.8325366
+    date: "2026-02-08",
+    placeId: "mizumoto_park",
+    name: "水元公園",
+    time: "",
+    lat: 35.788554,
+    lng: 139.869452
   },
   {
-    "date": "2026-01-11",
-    "placeId": "shibuya_nampaidai_nominoichi",
-    "name": "渋谷蚤の市（渋谷区南平台町16-17）",
-    "time": "",
-    "lat": 35.6539804,
-    "lng": 139.6936391
+    date: "2026-02-10",
+    placeId: "kawaguchi_sakura_hospital_noriben",
+    name: "川口さくら病院（のり弁）",
+    time: "11:00-14:00",
+    lat: 35.852048,
+    lng: 139.724747
   },
   {
-    "date": "2026-01-13",
-    "placeId": "kawaguchi_sakura_hospital_noriben",
-    "name": "川口さくら病院（川口市神戸258-1／のり弁）",
-    "time": "11:00-14:00",
-    "lat": 35.852048,
-    "lng": 139.724747
+    date: "2026-02-12",
+    placeId: "saitama_urawa_cityhall_noriben",
+    name: "さいたま市役所 浦和本庁舎（のり弁）",
+    time: "",
+    lat: 35.861670,
+    lng: 139.645280
   },
   {
-    "date": "2026-01-14",
-    "placeId": "dokkyo_soka",
-    "name": "獨協大学 草加キャンパス",
-    "time": "",
-    "lat": 35.839861,
-    "lng": 139.794333
+    date: "2026-02-14",
+    placeId: "daihatsu_marche_adachi",
+    name: "ダイハツマルシェ 足立区",
+    time: "",
+    lat: 35.792330,
+    lng: 139.792013
   },
   {
-    "date": "2026-01-15",
-    "placeId": "warabi_city_hall_noriben",
-    "name": "蕨市役所（のり弁）",
-    "time": "",
-    "lat": 35.82558,
-    "lng": 139.6795603
+    date: "2026-02-15",
+    placeId: "misato_coffee_fest_2026",
+    name: "MISATO COFFEE FEST 2026",
+    time: "11:00-15:00",
+    lat: 35.844747,
+    lng: 139.880486
   },
   {
-    "date": "2026-01-17",
-    "placeId": "kameido_chuo_park",
-    "name": "都立亀戸中央公園",
-    "time": "",
-    "lat": 35.7007507,
-    "lng": 139.8361199
+    date: "2026-02-17",
+    placeId: "dynam_misato_togasaki",
+    name: "ダイナム三郷戸ヶ崎店",
+    time: "",
+    lat: 35.799011,
+    lng: 139.867575
   },
   {
-    "date": "2026-01-18",
-    "placeId": "saitama_kodomo_katei_center",
-    "name": "さいたま市子ども家庭総合センター",
-    "time": "",
-    "lat": 35.885611,
-    "lng": 139.644083
+    date: "2026-02-18",
+    placeId: "warabi_city_hall_noriben",
+    name: "蕨市役所（のり弁）",
+    time: "",
+    lat: 35.825580,
+    lng: 139.679560
   },
   {
-    "date": "2026-01-20",
-    "placeId": "dynam_togasaki",
-    "name": "ダイナム戸ヶ崎店",
-    "time": "",
-    "lat": 35.7990108,
-    "lng": 139.86757478
+    date: "2026-02-19",
+    placeId: "saitama_urawa_cityhall_noriben",
+    name: "さいたま市役所 浦和本庁舎（のり弁）",
+    time: "",
+    lat: 35.861670,
+    lng: 139.645280
   },
   {
-    "date": "2026-01-21",
-    "placeId": "saitama_urawa_cityhall_noriben",
-    "name": "さいたま市役所 浦和本庁舎（のり弁）",
-    "time": "",
-    "lat": 35.86167,
-    "lng": 139.64528
+    date: "2026-02-21",
+    placeId: "mizumoto_park",
+    name: "水元公園",
+    time: "",
+    lat: 35.788554,
+    lng: 139.869452
   },
   {
-    "date": "2026-01-22",
-    "placeId": "saitama_tomo_tandai_seijo_exam",
-    "name": "埼玉東萌短期大学（星城入試／広報課さま昼食）",
-    "time": "",
-    "lat": 35.869881,
-    "lng": 139.780239
+    date: "2026-02-22",
+    placeId: "soka_park_event",
+    name: "みんなのえがおまつり 草加公園",
+    time: "",
+    lat: 35.845873,
+    lng: 139.833503
   },
   {
-    "date": "2026-01-24",
-    "placeId": "ichikawa_gochisou_marche",
-    "name": "いちかわごちそうマルシェ",
-    "time": "",
-    "lat": 35.71056,
-    "lng": 139.92861
+    date: "2026-02-23",
+    placeId: "edogawa_housing_gallery",
+    name: "江戸川区住宅展示場 買取イベント",
+    time: "",
+    lat: 35.706797,
+    lng: 139.871131
   },
   {
-    "date": "2026-01-25",
-    "placeId": "charie_asaka_grandfield",
-    "name": "シャリエ朝霞 グランフィールド",
-    "time": "",
-    "lat": 35.787996103978,
-    "lng": 139.5924669767
+    date: "2026-02-24",
+    placeId: "kawaguchi_sakura_hospital_noriben",
+    name: "川口さくら病院（のり弁）",
+    time: "11:00-14:00",
+    lat: 35.852048,
+    lng: 139.724747
   },
   {
-    "date": "2026-01-27",
-    "placeId": "kawaguchi_sakura_hospital_noriben",
-    "name": "川口さくら病院（川口市神戸258-1／のり弁）",
-    "time": "11:00-14:00",
-    "lat": 35.852048,
-    "lng": 139.724747
+    date: "2026-02-26",
+    placeId: "saitama_urawa_cityhall_noriben",
+    name: "さいたま市役所 浦和本庁舎（のり弁）",
+    time: "",
+    lat: 35.861670,
+    lng: 139.645280
   },
   {
-    "date": "2026-01-28",
-    "placeId": "shinagawa_city_hall_noriben",
-    "name": "品川区役所 総合庁舎（のり弁）",
-    "time": "",
-    "lat": 35.60917,
-    "lng": 139.73017
-  },
-  {
-    "date": "2026-01-29",
-    "placeId": "st_lukes",
-    "name": "聖路加国際大学",
-    "time": "",
-    "lat": 35.667876,
-    "lng": 139.775819
-  },
-  {
-    "date": "2026-01-31",
-    "placeId": "higashi_ayase_park",
-    "name": "東綾瀬公園",
-    "time": "",
-    "lat": 35.769967,
-    "lng": 139.8325366
+    date: "2026-02-28",
+    placeId: "mizumoto_park_dog_festival",
+    name: "水元公園 ドッグフェスティバル",
+    time: "",
+    lat: 35.788554,
+    lng: 139.869452
   }
-]
+];
