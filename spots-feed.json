@@ -288,20 +288,20 @@
     "lng": 139.833503
   },
   {
-    "date": "2026-02-23",
-    "placeId": "edogawa_housing_gallery",
-    "name": "江戸川区住宅展示場 買取イベント",
-    "time": "",
-    "lat": 35.706797,
-    "lng": 139.871131
-  },
-  {
     "date": "2026-02-24",
     "placeId": "kawaguchi_sakura_hospital_noriben",
     "name": "川口さくら病院（のり弁）",
     "time": "11:00-14:00",
     "lat": 35.852048,
     "lng": 139.724747
+  },
+  {
+    "date": "2026-02-25",
+    "placeId": "kashiwanoha_tsite_noriben",
+    "name": "柏の葉 T-SITE（のり弁）",
+    "time": "",
+    "lat": 35.8915,
+    "lng": 139.9516
   },
   {
     "date": "2026-02-26",
