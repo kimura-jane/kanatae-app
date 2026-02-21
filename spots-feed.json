@@ -318,5 +318,165 @@
     "time": "",
     "lat": 35.788554,
     "lng": 139.869452
+  },
+  {
+    "date": "2026-03-01",
+    "placeId": "michi_no_eki_showa",
+    "name": "道の駅庄和",
+    "time": "",
+    "lat": 35.996804,
+    "lng": 139.794780
+  },
+  {
+    "date": "2026-03-03",
+    "placeId": "dynam_togasaki",
+    "name": "三郷市戸ケ崎3丁目（ダイナム）",
+    "time": "",
+    "lat": 35.799011,
+    "lng": 139.867575
+  },
+  {
+    "date": "2026-03-05",
+    "placeId": "saitama_urawa_cityhall_noriben",
+    "name": "さいたま市役所 浦和本庁舎（のり弁）",
+    "time": "",
+    "lat": 35.861670,
+    "lng": 139.645280
+  },
+  {
+    "date": "2026-03-07",
+    "placeId": "niodori_plaza_charity",
+    "name": "東日本応援チャリティーライブ におどりプラザ",
+    "time": "",
+    "lat": 35.824433,
+    "lng": 139.878299
+  },
+  {
+    "date": "2026-03-08",
+    "placeId": "motto_higashi_adachi_2026",
+    "name": "motto!東あだち 2026春 大谷田団地内公園",
+    "time": "",
+    "lat": 35.776959,
+    "lng": 139.844122
+  },
+  {
+    "date": "2026-03-10",
+    "placeId": "kawaguchi_sakura_hospital_noriben",
+    "name": "川口さくら病院（川口市神戸258-1／のり弁ラスト2回）",
+    "time": "11:00-14:00",
+    "lat": 35.852048,
+    "lng": 139.724747
+  },
+  {
+    "date": "2026-03-11",
+    "placeId": "hakuten_tbase_noriben",
+    "name": "江東区 HAKUTEN T-BASE（のり弁）",
+    "time": "",
+    "lat": 35.643988,
+    "lng": 139.817049
+  },
+  {
+    "date": "2026-03-12",
+    "placeId": "matsubara_ayasegawa_park",
+    "name": "まつばら綾瀬川公園に大集合（無料プレゼント）",
+    "time": "",
+    "lat": 35.840969,
+    "lng": 139.806570
+  },
+  {
+    "date": "2026-03-14",
+    "placeId": "ichikawa_gochisou_marche",
+    "name": "いちかわごちそうマルシェ",
+    "time": "",
+    "lat": 35.710560,
+    "lng": 139.928610
+  },
+  {
+    "date": "2026-03-17",
+    "placeId": "dynam_togasaki",
+    "name": "三郷市戸ケ崎3丁目（ダイナム）",
+    "time": "",
+    "lat": 35.799011,
+    "lng": 139.867575
+  },
+  {
+    "date": "2026-03-18",
+    "placeId": "warabi_city_hall_noriben",
+    "name": "蕨市役所（のり弁）",
+    "time": "",
+    "lat": 35.825580,
+    "lng": 139.679560
+  },
+  {
+    "date": "2026-03-19",
+    "placeId": "saitama_urawa_cityhall_noriben",
+    "name": "さいたま市役所 浦和本庁舎（のり弁）",
+    "time": "",
+    "lat": 35.861670,
+    "lng": 139.645280
+  },
+  {
+    "date": "2026-03-21",
+    "placeId": "komefes_square_nagareyama",
+    "name": "米フェス×スクエア マルシェ 流山おおたかの森S・C",
+    "time": "",
+    "lat": 35.870716,
+    "lng": 139.926021
+  },
+  {
+    "date": "2026-03-22",
+    "placeId": "en_market_moriya",
+    "name": "第6回 en market 守谷住宅公園",
+    "time": "",
+    "lat": 35.945108,
+    "lng": 139.993872
+  },
+  {
+    "date": "2026-03-24",
+    "placeId": "kawaguchi_sakura_hospital_noriben",
+    "name": "川口さくら病院（川口市神戸258-1／最後の出店）",
+    "time": "11:00-14:00",
+    "lat": 35.852048,
+    "lng": 139.724747
+  },
+  {
+    "date": "2026-03-25",
+    "placeId": "yoyogi_park",
+    "name": "代々木公園",
+    "time": "",
+    "lat": 35.671628,
+    "lng": 139.695205
+  },
+  {
+    "date": "2026-03-26",
+    "placeId": "saitama_urawa_cityhall_noriben",
+    "name": "さいたま市役所 浦和本庁舎（のり弁）",
+    "time": "",
+    "lat": 35.861670,
+    "lng": 139.645280
+  },
+  {
+    "date": "2026-03-28",
+    "placeId": "tleague_final_yoyogi",
+    "name": "Tリーグ ファイナル 代々木体育館",
+    "time": "",
+    "lat": 35.666438,
+    "lng": 139.698591
+  },
+  {
+    "date": "2026-03-29",
+    "placeId": "mizumoto_park",
+    "name": "水元公園",
+    "time": "",
+    "lat": 35.788554,
+    "lng": 139.869452
+  },
+  {
+    "date": "2026-03-31",
+    "placeId": "dynam_togasaki",
+    "name": "三郷市戸ケ崎3丁目（ダイナム）",
+    "time": "",
+    "lat": 35.799011,
+    "lng": 139.867575
   }
 ]
