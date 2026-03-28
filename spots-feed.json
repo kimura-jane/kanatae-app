@@ -158,5 +158,173 @@
     "time": "",
     "lat": 35.788554,
     "lng": 139.869452
+  },
+  {
+    "date": "2026-04-03",
+    "placeId": "warabi_city_hall_noriben",
+    "name": "蕨市役所（のり弁）",
+    "time": "",
+    "lat": 35.825580,
+    "lng": 139.679560
+  },
+  {
+    "date": "2026-04-04",
+    "placeId": "michi_no_eki_showa",
+    "name": "道の駅庄和",
+    "time": "",
+    "lat": 35.996804,
+    "lng": 139.794780
+  },
+  {
+    "date": "2026-04-05",
+    "placeId": "mizumoto_park",
+    "name": "水元公園",
+    "time": "",
+    "lat": 35.788554,
+    "lng": 139.869452
+  },
+  {
+    "date": "2026-04-07",
+    "placeId": "saitama_urawa_cityhall_noriben",
+    "name": "さいたま市役所 浦和本庁舎（のり弁）",
+    "time": "",
+    "lat": 35.861670,
+    "lng": 139.645280
+  },
+  {
+    "date": "2026-04-08",
+    "placeId": "otemachi_kawabata_food_garden_noriben",
+    "name": "大手町川端フードガーデン 千代田区道（日本橋川沿い）（のり弁）",
+    "time": "",
+    "lat": 35.688422,
+    "lng": 139.765929
+  },
+  {
+    "date": "2026-04-09",
+    "placeId": "kibou_no_ie_jidou_yougo",
+    "name": "希望の家 児童養護施設（一般販売はありません）",
+    "time": "",
+    "lat": 35.751945,
+    "lng": 139.850242
+  },
+  {
+    "date": "2026-04-11",
+    "placeId": "chiisana_mori_soka_yahata",
+    "name": "小さな森の家（埼玉県草加市八幡町658）（一般販売はありません）",
+    "time": "",
+    "lat": 35.853457,
+    "lng": 139.807725
+  },
+  {
+    "date": "2026-04-12",
+    "placeId": "chiisana_mori_soka_yahata",
+    "name": "小さな森の家（埼玉県草加市八幡町658）（一般販売はありません）",
+    "time": "",
+    "lat": 35.853457,
+    "lng": 139.807725
+  },
+  {
+    "date": "2026-04-14",
+    "placeId": "dynam_togasaki",
+    "name": "ダイナム 三郷市戸ヶ崎3丁目",
+    "time": "",
+    "lat": 35.799011,
+    "lng": 139.867575
+  },
+  {
+    "date": "2026-04-15",
+    "placeId": "otemachi_kawabata_food_garden_noriben",
+    "name": "大手町川端フードガーデン 千代田区道（日本橋川沿い）（のり弁）",
+    "time": "",
+    "lat": 35.688422,
+    "lng": 139.765929
+  },
+  {
+    "date": "2026-04-16",
+    "placeId": "dokkyo_univ_soka",
+    "name": "獨協大学 草加キャンパス",
+    "time": "",
+    "lat": 35.839861,
+    "lng": 139.794333
+  },
+  {
+    "date": "2026-04-18",
+    "placeId": "mizumoto_park",
+    "name": "水元公園",
+    "time": "",
+    "lat": 35.788554,
+    "lng": 139.869452
+  },
+  {
+    "date": "2026-04-19",
+    "placeId": "harumi_futo_wanwan_picnic",
+    "name": "第4回晴海ふ頭公園 わんわんピクニック produced by わんこのフェス",
+    "time": "",
+    "lat": 35.647392,
+    "lng": 139.771711
+  },
+  {
+    "date": "2026-04-21",
+    "placeId": "saitama_urawa_cityhall_noriben",
+    "name": "さいたま市役所 浦和本庁舎（のり弁）",
+    "time": "",
+    "lat": 35.861670,
+    "lng": 139.645280
+  },
+  {
+    "date": "2026-04-22",
+    "placeId": "otemachi_kawabata_food_garden_noriben",
+    "name": "大手町川端フードガーデン 千代田区道（日本橋川沿い）（のり弁）",
+    "time": "",
+    "lat": 35.688422,
+    "lng": 139.765929
+  },
+  {
+    "date": "2026-04-23",
+    "placeId": "dokkyo_univ_soka_noriben",
+    "name": "獨協大学 草加キャンパス（のり弁）",
+    "time": "",
+    "lat": 35.839861,
+    "lng": 139.794333
+  },
+  {
+    "date": "2026-04-25",
+    "placeId": "piala_fun_festa_niodori",
+    "name": "ぴあらfunフェスタ2026（三郷中央におどりプラザ）",
+    "time": "",
+    "lat": 35.823653,
+    "lng": 139.876078
+  },
+  {
+    "date": "2026-04-26",
+    "placeId": "shibuya_nominoichi",
+    "name": "渋谷蚤の市（渋谷区南平台町16-17）",
+    "time": "",
+    "lat": 35.653884,
+    "lng": 139.694039
+  },
+  {
+    "date": "2026-04-28",
+    "placeId": "dynam_togasaki",
+    "name": "ダイナム 三郷市戸ヶ崎3丁目",
+    "time": "",
+    "lat": 35.799011,
+    "lng": 139.867575
+  },
+  {
+    "date": "2026-04-29",
+    "placeId": "michi_no_eki_showa",
+    "name": "道の駅庄和",
+    "time": "",
+    "lat": 35.996804,
+    "lng": 139.794780
+  },
+  {
+    "date": "2026-04-30",
+    "placeId": "dokkyo_univ_soka",
+    "name": "獨協大学 草加キャンパス",
+    "time": "",
+    "lat": 35.839861,
+    "lng": 139.794333
   }
 ]
