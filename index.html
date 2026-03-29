@@ -2,16 +2,16 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <title>おにぎり屋かなたけ</title>
-
-  <meta name="description" content="おにぎり屋かなたけの出店スケジュール・マップ・クーポン">
+  <meta name="description" content="おにぎり屋かなたけ - 出店スケジュール・クーポン・口コミ">
   <meta name="theme-color" content="#f5a623">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="onigiriya_kanatake_192.png">
 
-  <!-- Google Fonts: Kosugi Maru -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet">
@@ -19,564 +19,397 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 
-  <link rel="stylesheet" href="style.css?v=20260208">
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
 
-  <!-- ★重要：データは spots-all.js（window.spotsAllByYear）を基準にする -->
-  <script src="spots-all.js?v=20260208" defer></script>
+  <link rel="stylesheet" href="style.css">
 
-  <!-- map 用（window.spots を使うなら残す。無い場合は全体から自動で作るのであってもOK） -->
-  <script src="spots.js?v=20260208" defer></script>
+  <script src="spots-all.js" defer></script>
+  <script src="spots.js" defer></script>
 </head>
-
 <body>
-  <div class="app">
-    <header class="header">
-      <h1>
-        <img src="icon.png" alt="" class="header-icon">
-        おにぎり屋かなたけ
-      </h1>
-    </header>
 
-    <nav class="tab-nav">
-      <button class="tab-btn active" data-tab="calendar">📅 カレンダー</button>
-      <button class="tab-btn" data-tab="map">📍 マップ</button>
-      <button class="tab-btn" data-tab="menu">🍙 メニュー</button>
-      <button class="tab-btn" data-tab="coupon">🎫 クーポン</button>
-      <button class="tab-btn" data-tab="settings">⚙️ 設定</button>
-    </nav>
+<div class="app" id="app">
 
-    <main class="tab-content">
-      <section class="tab-pane active" id="calendar">
+  <header class="header">
+    <h1>
+      <img src="icon.png" alt="" class="header-icon">
+      おにぎり屋かなたけ
+    </h1>
+  </header>
+
+  <main class="main-content">
+
+    <!-- ===== ホーム ===== -->
+    <section class="page active" id="page-home">
+      <div class="section-card" id="notices-area">
+        <h2 class="section-title">📢 お知らせ</h2>
+        <div id="notices-list" class="notices-list">
+          <p class="loading-text">読み込み中…</p>
+        </div>
+        <button class="btn btn-secondary btn-full" id="notices-more-btn" style="display:none;">もっと見る</button>
+      </div>
+
+      <div class="section-card">
+        <h2 class="section-title">⭐ 来店ポイント</h2>
+        <div class="stamp-card">
+          <div class="stamp-grid" id="stamp-grid"></div>
+          <p class="stamp-count">現在 <span id="stamp-current">0</span> / 20 ポイント</p>
+          <p class="stamp-reward">20ポイントで「女神のほほえみ」プレゼント！</p>
+          <button class="btn btn-primary" id="redeem-btn" style="display:none;">🎁 特典を受け取る</button>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h2 class="section-title">📅 出店カレンダー</h2>
         <div class="calendar">
           <div class="calendar-header">
             <button class="calendar-nav" id="prevMonth">◀</button>
-            <h2 class="calendar-title" id="calendarTitle">----</h2>
+            <h3 class="calendar-title" id="calendarTitle"></h3>
             <button class="calendar-nav" id="nextMonth">▶</button>
           </div>
           <div class="calendar-grid" id="calendarGrid"></div>
         </div>
-      </section>
+      </div>
 
-      <section class="tab-pane" id="map-pane">
-        <div id="map"></div>
-        <section class="spot-card" id="listCard">
-          <p class="spot-title">出店リスト（タップで地図）</p>
+      <div class="section-card">
+        <h2 class="section-title">📍 出店マップ</h2>
+        <div id="map" class="home-map"></div>
+        <div class="spot-list-wrap">
           <ol class="spot-list" id="spotList"></ol>
-        </section>
-      </section>
-
-      <section class="tab-pane" id="menu">
-        <div class="menu-container">
-          <img src="IMG_7605.jpeg" alt="おにぎり屋かなたけ メニュー" class="menu-image">
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="tab-pane" id="coupon">
-        <div class="coupon">
-          <img src="icon.png" alt="かなたけ" class="coupon-icon">
-          <h2 class="coupon-title">スマイルクーポン</h2>
-          <p class="coupon-desc">この画面を店主に見せてね</p>
+    <!-- ===== クーポン ===== -->
+    <section class="page" id="page-coupon">
 
-          <div class="coupon-card">
-            <p class="coupon-label">特典</p>
-            <p class="coupon-value">😊 店主の笑顔</p>
-          </div>
-          <p class="coupon-note">※ 何度でも使えます</p>
+      <div class="section-card">
+        <h2 class="section-title">🍙 メニュー</h2>
+        <div class="menu-notice">
+          <span class="menu-notice-icon">📢</span>
+          <span>販売状況は日によって異なる場合があります。最新情報は
+            <a href="https://x.com/kanatake33" target="_blank" rel="noopener">𝕏</a>や
+            <a href="https://www.instagram.com/onigiri_kanatake?igsh=em5sbTgwMDFrMWlj" target="_blank" rel="noopener">Instagram</a>
+          をご確認ください。</span>
         </div>
-      </section>
+        <p class="menu-hint">商品をタップすると拡大写真が見られます</p>
+        <div class="menu-map-wrap" id="menuMapWrap">
+          <img src="https://raw.githubusercontent.com/kimura-jane/kanatake-v2/main/gazo/IMG_5227.jpeg"
+               alt="おにぎり屋かなたけ メニュー" class="menu-map-img" id="menuMapImg">
+          <div class="menu-hotspot" style="left:1%;top:15%;width:32%;height:27%;" data-menu="IMG_5220" data-name="小松菜と炙り鮭チーズ"></div>
+          <div class="menu-hotspot" style="left:34%;top:15%;width:32%;height:27%;" data-menu="IMG_5221" data-name="山わさびとクリームチーズ"></div>
+          <div class="menu-hotspot" style="left:67%;top:15%;width:32%;height:27%;" data-menu="IMG_5222" data-name="ダブル昆布"></div>
+          <div class="menu-hotspot" style="left:1%;top:42%;width:32%;height:26%;" data-menu="IMG_5223" data-name="梅きんぴらごぼう"></div>
+          <div class="menu-hotspot" style="left:34%;top:42%;width:32%;height:26%;" data-menu="IMG_5224" data-name="大葉みそ"></div>
+          <div class="menu-hotspot" style="left:67%;top:42%;width:32%;height:26%;" data-menu="IMG_5226" data-name="じゃがいもとカレーそぼろ"></div>
+          <div class="menu-hotspot" style="left:1%;top:68%;width:49%;height:13%;" data-menu="IMG_5231" data-name="本日の限定みそ汁"></div>
+          <div class="menu-hotspot" style="left:51%;top:68%;width:48%;height:13%;" data-menu="IMG_5230" data-name="ポリ茶瓶（お茶）"></div>
+          <div class="menu-hotspot" style="left:1%;top:81%;width:49%;height:14%;" data-menu="IMG_5228" data-name="女神の玄米だんご"></div>
+        </div>
 
-      <section class="tab-pane" id="settings">
-        <div class="settings">
-          <h2 class="settings-title">🔔 通知設定</h2>
-
-          <div class="settings-card">
-            <p class="settings-card-title">⏰ 通知する時間</p>
-            <label class="settings-option">
-              <input type="radio" name="notifyHour" value="18">
-              <span class="settings-option-text">前日 18:00 に通知</span>
-            </label>
-            <label class="settings-option">
-              <input type="radio" name="notifyHour" value="21" checked>
-              <span class="settings-option-text">前日 21:00 に通知</span>
-            </label>
-          </div>
-
-          <div class="settings-card">
-            <p class="settings-card-title">📍 通知する出店場所</p>
-            <label class="settings-option">
-              <input type="checkbox" id="place_all" checked>
-              <span class="settings-option-text">すべての出店を通知する</span>
-            </label>
-
-            <div id="placeList" class="settings-places">
-              <p class="settings-places-title">または、場所を選んで通知：</p>
-              <label class="settings-option">
-                <input type="checkbox" class="placeChk" value="sakura_hospital">
-                <span class="settings-option-text">川口さくら病院</span>
-              </label>
-              <label class="settings-option">
-                <input type="checkbox" class="placeChk" value="dokkyo">
-                <span class="settings-option-text">獨協大学</span>
-              </label>
-              <label class="settings-option">
-                <input type="checkbox" class="placeChk" value="saitama_cityhall">
-                <span class="settings-option-text">さいたま市役所</span>
-              </label>
-              <label class="settings-option">
-                <input type="checkbox" class="placeChk" value="dynam_togasaki">
-                <span class="settings-option-text">ダイナム戸ケ崎</span>
-              </label>
+        <div class="menu-noriben">
+          <h3 class="menu-noriben-title">🍱 のり弁</h3>
+          <div class="menu-noriben-grid">
+            <div class="menu-noriben-item" data-menu="IMG_5232" data-name="のり弁①">
+              <img src="https://raw.githubusercontent.com/kimura-jane/kanatake-v2/main/gazo/IMG_5232.jpeg" alt="のり弁①" loading="lazy">
             </div>
-
-            <div class="settings-note">
-              <span class="settings-note-icon">💡</span>
-              <span>「すべての出店を通知する」がONの場合、個別の場所選択は無効になります</span>
+            <div class="menu-noriben-item" data-menu="IMG_5233" data-name="のり弁②">
+              <img src="https://raw.githubusercontent.com/kimura-jane/kanatake-v2/main/gazo/IMG_5233.jpeg" alt="のり弁②" loading="lazy">
+            </div>
+            <div class="menu-noriben-item" data-menu="IMG_5234" data-name="のり弁③">
+              <img src="https://raw.githubusercontent.com/kimura-jane/kanatake-v2/main/gazo/IMG_5234.jpeg" alt="のり弁③" loading="lazy">
             </div>
           </div>
-
-          <button class="settings-btn" id="pushBtn" type="button">
-            🔔 通知を受け取る
-          </button>
-          <p id="pushStatus" class="settings-status"></p>
         </div>
-      </section>
-    </main>
+      </div>
+
+      <div class="section-card" id="megami-coupon-area" style="display:none;">
+        <h2 class="section-title">🌾 女神のほほえみクーポン</h2>
+        <div class="coupon-show-card">
+          <img src="https://raw.githubusercontent.com/kimura-jane/kanatake-v2/main/www/IMG_5008.jpeg" alt="女神のほほえみ" class="coupon-image">
+          <p class="coupon-show-label">この画面を店主に見せてね</p>
+          <p class="coupon-show-item">🌾 女神のほほえみ</p>
+          <p class="coupon-warning">⚠️ 店主の目の前で「使用済みにする」を押してください</p>
+          <button class="btn btn-danger btn-full" id="megami-use-btn">使用済みにする</button>
+        </div>
+      </div>
+
+      <div class="section-card" id="welcome-coupon-area">
+        <h2 class="section-title">🎁 初回クーポン</h2>
+        <div id="welcome-coupon-content">
+          <p class="coupon-desc">はじめての方に、<strong>どれか1つ</strong>プレゼント！</p>
+          <p class="coupon-warning">⚠️ 1端末1回限り・店主の目の前で押してください</p>
+          <div class="welcome-choices" id="welcome-choices">
+            <button class="welcome-choice-btn" data-choice="お茶">
+              <img src="https://raw.githubusercontent.com/kimura-jane/kanatake-v2/main/www/IMG_5006.jpeg" alt="お茶" class="choice-img">
+              <span>🍵 お茶</span>
+            </button>
+            <button class="welcome-choice-btn" data-choice="ラムネ">
+              <img src="https://raw.githubusercontent.com/kimura-jane/kanatake-v2/main/www/IMG_5012.jpeg" alt="ラムネ" class="choice-img">
+              <span>🥤 ラムネ</span>
+            </button>
+            <button class="welcome-choice-btn" data-choice="ダンゴ">
+              <img src="https://raw.githubusercontent.com/kimura-jane/kanatake-v2/main/www/IMG_5007.jpeg" alt="ダンゴ" class="choice-img">
+              <span>🍡 ダンゴ</span>
+            </button>
+          </div>
+          <p class="choice-hint" id="choice-hint">↑ どれか1つを選んでタップしてね</p>
+          <button class="btn btn-primary btn-full" id="welcome-confirm-btn" style="display:none;">この特典をもらう</button>
+        </div>
+        <div id="welcome-coupon-used" style="display:none;">
+          <div class="coupon-used-badge">✅ 使用済み</div>
+          <p class="coupon-note">初回クーポンは使用済みです</p>
+        </div>
+        <div id="welcome-coupon-show" style="display:none;">
+          <div class="coupon-show-card">
+            <img src="" alt="" class="coupon-image" id="welcome-coupon-img">
+            <p class="coupon-show-label">この画面を店主に見せてね</p>
+            <p class="coupon-show-item" id="welcome-coupon-item"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card" id="birthday-coupon-area" style="display:none;">
+        <h2 class="section-title">🎂 誕生日クーポン</h2>
+        <div id="birthday-coupon-content">
+          <p class="coupon-desc">お誕生月おめでとう！<strong>どれか1つ</strong>プレゼント！</p>
+          <p class="coupon-warning">⚠️ 年1回限り・店主の目の前で押してください</p>
+          <div class="welcome-choices" id="birthday-choices">
+            <button class="welcome-choice-btn birthday-choice-btn" data-choice="お茶">
+              <img src="https://raw.githubusercontent.com/kimura-jane/kanatake-v2/main/www/IMG_5006.jpeg" alt="お茶" class="choice-img">
+              <span>🍵 お茶</span>
+            </button>
+            <button class="welcome-choice-btn birthday-choice-btn" data-choice="ラムネ">
+              <img src="https://raw.githubusercontent.com/kimura-jane/kanatake-v2/main/www/IMG_5012.jpeg" alt="ラムネ" class="choice-img">
+              <span>🥤 ラムネ</span>
+            </button>
+            <button class="welcome-choice-btn birthday-choice-btn" data-choice="ダンゴ">
+              <img src="https://raw.githubusercontent.com/kimura-jane/kanatake-v2/main/www/IMG_5007.jpeg" alt="ダンゴ" class="choice-img">
+              <span>🍡 ダンゴ</span>
+            </button>
+          </div>
+          <p class="choice-hint" id="birthday-choice-hint">↑ どれか1つを選んでタップしてね</p>
+          <button class="btn btn-primary btn-full" id="birthday-confirm-btn" style="display:none;">この特典をもらう</button>
+        </div>
+        <div id="birthday-coupon-used" style="display:none;">
+          <div class="coupon-used-badge">✅ 今年の誕生日クーポンは使用済みです</div>
+        </div>
+        <div id="birthday-coupon-show" style="display:none;">
+          <div class="coupon-show-card">
+            <img src="" alt="" class="coupon-image" id="birthday-coupon-img">
+            <p class="coupon-show-label">この画面を店主に見せてね</p>
+            <p class="coupon-show-item" id="birthday-coupon-item"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card" id="my-coupons-area" style="display:none;">
+        <h2 class="section-title">🎫 保有クーポン</h2>
+        <div id="my-coupons-list"></div>
+      </div>
+
+      <div class="section-card">
+        <h2 class="section-title">🎫 FiNANCiEクーポン</h2>
+        <p class="coupon-desc">クーポンコードをお持ちの方はこちら</p>
+        <div class="code-input-wrap">
+          <input type="text" id="coupon-code-input" class="input-field" placeholder="コードを入力" maxlength="20">
+          <button class="btn btn-primary" id="coupon-code-btn">送信</button>
+        </div>
+        <p id="coupon-code-result" class="result-text"></p>
+      </div>
+    </section>
+
+    <!-- ===== QRスキャン ===== -->
+    <section class="page" id="page-qr">
+      <div class="qr-container">
+        <h2 class="section-title">📷 来店チェックイン</h2>
+        <p class="qr-desc">お店のQRコードをスキャンしてポイントGET！</p>
+        <div id="qr-reader" class="qr-reader"></div>
+        <button class="btn btn-large btn-qr" id="qr-start-btn">📷 QRスキャン開始</button>
+        <p id="qr-result" class="result-text"></p>
+        <p class="qr-note">※ 1日1回・お店から500m以内で有効</p>
+      </div>
+    </section>
+
+    <!-- ===== 口コミ ===== -->
+    <section class="page" id="page-reviews">
+      <div class="section-card">
+        <h2 class="section-title">💬 口コミ</h2>
+        <div id="reviews-list" class="reviews-list">
+          <p class="loading-text">読み込み中…</p>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h2 class="section-title">✏️ 口コミを投稿</h2>
+        <div class="review-form">
+          <input type="text" id="review-nickname" class="input-field" placeholder="ニックネーム（50文字以内）" maxlength="50">
+          <textarea id="review-body" class="input-field textarea-field" placeholder="口コミを書いてね（600文字以内）" maxlength="600"></textarea>
+          <div class="review-char-count"><span id="review-char-current">0</span> / 600</div>
+          <button class="btn btn-primary" id="review-submit-btn">投稿する</button>
+          <p id="review-result" class="result-text"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 設定 ===== -->
+    <section class="page" id="page-settings">
+      <div class="section-card">
+        <h2 class="section-title">🔔 通知設定</h2>
+        <div class="settings-card">
+          <p class="settings-card-title">⏰ 通知する時間</p>
+          <label class="settings-option">
+            <input type="radio" name="notifyHour" value="18">
+            <span class="settings-option-text">前日 18:00 に通知</span>
+          </label>
+          <label class="settings-option">
+            <input type="radio" name="notifyHour" value="21" checked>
+            <span class="settings-option-text">前日 21:00 に通知</span>
+          </label>
+        </div>
+
+        <div class="settings-card">
+          <p class="settings-card-title">📍 通知する出店場所</p>
+          <label class="settings-option">
+            <input type="checkbox" id="place_all" checked>
+            <span class="settings-option-text">すべての出店を通知する</span>
+          </label>
+          <label class="settings-option">
+            <input type="checkbox" id="place_off">
+            <span class="settings-option-text">OFF（通知しない）</span>
+          </label>
+          <div id="placeList" class="settings-places">
+            <p class="settings-places-title">または、場所を選んで通知：</p>
+            <label class="settings-option">
+              <input type="checkbox" class="placeChk" value="sakura_hospital">
+              <span class="settings-option-text">川口さくら病院</span>
+            </label>
+            <label class="settings-option">
+              <input type="checkbox" class="placeChk" value="dokkyo">
+              <span class="settings-option-text">獨協大学</span>
+            </label>
+            <label class="settings-option">
+              <input type="checkbox" class="placeChk" value="saitama_cityhall">
+              <span class="settings-option-text">さいたま市役所</span>
+            </label>
+            <label class="settings-option">
+              <input type="checkbox" class="placeChk" value="dynam_togasaki">
+              <span class="settings-option-text">ダイナム戸ケ崎</span>
+            </label>
+          </div>
+          <div class="settings-note">
+            <span class="settings-note-icon">💡</span>
+            <span>「すべての出店を通知する」がONの場合、個別の場所選択は無効になります</span>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" id="pushBtn" type="button">🔔 通知を受け取る</button>
+        <p id="pushStatus" class="result-text"></p>
+      </div>
+
+      <div class="section-card">
+        <h2 class="section-title">🎂 誕生月登録</h2>
+        <p class="settings-desc">誕生月を登録すると、毎年お誕生月にクーポンがもらえます！</p>
+        <div id="birth-month-form">
+          <p class="birth-month-warning">⚠️ 一度登録すると変更できません</p>
+          <div class="birthday-select-wrap">
+            <select id="birth-month-select" class="input-field select-field">
+              <option value="">選択してください</option>
+              <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
+              <option value="4">4月</option><option value="5">5月</option><option value="6">6月</option>
+              <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
+              <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+            </select>
+            <button class="btn btn-primary" id="birth-month-btn">登録</button>
+          </div>
+        </div>
+        <p id="birth-month-result" class="result-text"></p>
+      </div>
+
+      <div class="section-card">
+        <h2 class="section-title">📋 来店履歴</h2>
+        <div id="checkin-history" class="checkin-history">
+          <p class="loading-text">読み込み中…</p>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h2 class="section-title">📤 シェア</h2>
+        <p class="settings-desc">おにぎり屋かなたけをシェアしよう！</p>
+        <div class="share-buttons">
+          <button class="btn btn-share btn-x" id="share-x-btn">𝕏 でシェア</button>
+          <button class="btn btn-share btn-line" id="share-line-btn">LINE でシェア</button>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h2 class="section-title">📩 お問い合わせ</h2>
+        <p class="settings-desc">営業に関するお問い合わせ</p>
+        <a href="https://x.com/kanatake33" target="_blank" rel="noopener" class="btn btn-secondary btn-full">𝕏 @kanatake33 にDM</a>
+        <p class="settings-desc" style="margin-top:12px;">アプリに関するお問い合わせ</p>
+        <a href="https://x.com/kimura_jane" target="_blank" rel="noopener" class="btn btn-secondary btn-full">𝕏 @kimura_jane にDM</a>
+      </div>
+
+      <div class="section-card">
+        <h2 class="section-title">🔧 メンテナンス</h2>
+        <p class="settings-desc">表示がおかしいときはキャッシュをクリアしてください</p>
+        <button class="btn btn-secondary btn-full" id="cache-clear-btn">🗑️ キャッシュクリア</button>
+        <p id="cache-clear-result" class="result-text"></p>
+      </div>
+
+      <div class="section-card">
+        <h2 class="section-title">ℹ️ アプリ情報</h2>
+        <p class="app-info-text">おにぎり屋かなたけ v2.0</p>
+        <p class="app-info-text">端末ID: <span id="device-id-display" class="device-id-text"></span></p>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-page="home">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">ホーム</span>
+    </button>
+    <button class="nav-btn" data-page="coupon">
+      <span class="nav-icon">🎫</span>
+      <span class="nav-label">クーポン</span>
+    </button>
+    <button class="nav-btn nav-qr" data-page="qr">
+      <span class="nav-qr-circle">📷</span>
+      <span class="nav-label">QR</span>
+    </button>
+    <button class="nav-btn" data-page="reviews">
+      <span class="nav-icon">💬</span>
+      <span class="nav-label">口コミ</span>
+    </button>
+    <button class="nav-btn" data-page="settings">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">設定</span>
+    </button>
+  </nav>
+
+</div>
+
+<!-- カレンダーモーダル -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <p class="modal-date" id="modalDate"></p>
+    <h3 class="modal-title" id="modalTitle"></h3>
+    <p class="modal-time" id="modalTime"></p>
+    <a class="modal-btn" id="modalMap" href="#" target="_blank" rel="noopener">Googleマップで開く</a>
+    <button class="modal-btn modal-close" id="modalClose">閉じる</button>
   </div>
+</div>
 
-  <div class="modal-overlay" id="modal">
-    <div class="modal">
-      <p class="modal-date" id="modalDate"></p>
-      <h3 class="modal-title" id="modalTitle"></h3>
-      <p class="modal-time" id="modalTime"></p>
-      <a class="modal-btn" id="modalMap" href="#" target="_blank">Googleマップで開く</a>
-      <button class="modal-btn modal-close" id="modalClose">閉じる</button>
-    </div>
+<!-- メニュー拡大モーダル -->
+<div class="menu-modal-overlay" id="menuModal">
+  <div class="menu-modal-inner">
+    <p class="menu-modal-name" id="menuModalName"></p>
+    <img src="" alt="" id="menuModalImg" class="menu-modal-img">
+    <button class="menu-modal-close" id="menuModalClose">✕ 閉じる</button>
   </div>
+</div>
 
-  <script>
-    const BASE = new URL("./", location.href).pathname;
-    const SW_URL = BASE + "sw.js";
-    const PUSH_API_BASE = "https://kanatae-push.la-kofu.workers.dev";
-
-    // ===== tabs =====
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabPanes = document.querySelectorAll('.tab-pane');
-    let mapInitialized = false;
-    let mapInstance = null;
-    let markersArray = [];
-
-    tabBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tabId = btn.dataset.tab;
-        tabBtns.forEach(b => b.classList.remove('active'));
-        tabPanes.forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-
-        if (tabId === 'map') document.getElementById('map-pane').classList.add('active');
-        else document.getElementById(tabId).classList.add('active');
-
-        if (tabId === 'map' && !mapInitialized) { initMap(); mapInitialized = true; }
-        if (tabId === 'map' && mapInstance) setTimeout(() => mapInstance.invalidateSize(), 100);
-      });
-    });
-
-    // ===== calendar =====
-    let currentYear = 2025;
-    let currentMonth = 12;
-
-    let minYM = null; // {y,m}
-    let maxYM = null; // {y,m}
-    function ymToNum(y, m) { return y * 100 + m; }
-
-    function clampYM(y, m) {
-      if (!minYM || !maxYM) return { y, m };
-      const n = ymToNum(y, m);
-      const minN = ymToNum(minYM.y, minYM.m);
-      const maxN = ymToNum(maxYM.y, maxYM.m);
-      if (n < minN) return { y: minYM.y, m: minYM.m };
-      if (n > maxN) return { y: maxYM.y, m: maxYM.m };
-      return { y, m };
-    }
-
-    // ---- Data helpers（spotsAllByYearを正式対応）----
-    function getAllSpotsFlat() {
-      // 1) map 用の window.spots があればそれ（互換）
-      if (Array.isArray(window.spots) && window.spots.length) return window.spots;
-
-      // 2) spotsAllByYear を平坦化
-      if (window.spotsAllByYear && typeof window.spotsAllByYear === 'object') {
-        const years = Object.keys(window.spotsAllByYear).map(Number).filter(n => Number.isFinite(n)).sort((a,b)=>a-b);
-        const flat = [];
-        years.forEach(y => {
-          const arr = window.spotsAllByYear[y] || [];
-          arr.forEach(s => flat.push({ ...s, year: y }));
-        });
-        return flat;
-      }
-
-      // 3) 旧形式
-      if (Array.isArray(window.spotsAllYearly) && window.spotsAllYearly.length) return window.spotsAllYearly;
-      if (Array.isArray(window.spotsAll) && window.spotsAll.length) return window.spotsAll;
-
-      return [];
-    }
-
-    function getSpotsForYM(year, month) {
-      // spotsAllByYear があるなら、それを基準に "年＋月" で確実に絞る
-      if (window.spotsAllByYear && typeof window.spotsAllByYear === 'object') {
-        const arr = window.spotsAllByYear[year] || [];
-        return arr.filter(spot => {
-          const match = (spot.date || "").match(/(\d+)\/(\d+)/);
-          if (!match) return false;
-          const m = parseInt(match[1], 10);
-          return m === month;
-        });
-      }
-
-      // fallback（旧形式）
-      const spots = getAllSpotsFlat();
-      return spots.filter(spot => {
-        if (spot.year != null && Number(spot.year) !== Number(year)) return false;
-        const match = (spot.date || "").match(/(\d+)\/(\d+)/);
-        if (!match) return false;
-        const m = parseInt(match[1], 10);
-        return m === month;
-      });
-    }
-
-    function getEventsForMonth(year, month) {
-      const spots = getSpotsForYM(year, month);
-      const events = {};
-      spots.forEach(spot => {
-        const match = (spot.date || "").match(/(\d+)\/(\d+)/);
-        if (!match) return;
-        const d = parseInt(match[2], 10);
-        if (!events[d]) events[d] = [];
-        events[d].push(spot);
-      });
-      return events;
-    }
-
-    function computeMinMaxYM() {
-      const list = getAllSpotsFlat();
-      let minN = Infinity, maxN = -Infinity;
-
-      list.forEach(spot => {
-        const y = Number(spot.year);
-        if (!Number.isFinite(y)) return;
-
-        const match = (spot.date || "").match(/(\d+)\/(\d+)/);
-        if (!match) return;
-        const m = parseInt(match[1], 10);
-        if (!(m >= 1 && m <= 12)) return;
-
-        const n = ymToNum(y, m);
-        if (n < minN) minN = n;
-        if (n > maxN) maxN = n;
-      });
-
-      if (!isFinite(minN) || !isFinite(maxN)) {
-        minYM = null; maxYM = null;
-        return;
-      }
-
-      minYM = { y: Math.floor(minN / 100), m: minN % 100 };
-      maxYM = { y: Math.floor(maxN / 100), m: maxN % 100 };
-    }
-
-    function updateNavDisabled() {
-      const prevBtn = document.getElementById('prevMonth');
-      const nextBtn = document.getElementById('nextMonth');
-      if (!minYM || !maxYM) { prevBtn.disabled = false; nextBtn.disabled = false; return; }
-
-      const curN = ymToNum(currentYear, currentMonth);
-      prevBtn.disabled = curN <= ymToNum(minYM.y, minYM.m);
-      nextBtn.disabled = curN >= ymToNum(maxYM.y, maxYM.m);
-    }
-
-    function getShortName(name) {
-      const shortcuts = {
-        '川口さくら病院': 'さくら病院',
-        '獨協大学 草加キャンパス': '獨協大学',
-        'さいたま市役所 浦和本庁舎': 'さいたま市役所',
-        'ダイナム戸ヶ崎店': 'ダイナム'
-      };
-      return shortcuts[name] || (name || "").substring(0, 6);
-    }
-
-    function renderCalendar() {
-      const title = document.getElementById('calendarTitle');
-      const grid = document.getElementById('calendarGrid');
-
-      title.textContent = `${currentYear}年${currentMonth}月`;
-
-      const firstDay = new Date(currentYear, currentMonth - 1, 1);
-      const lastDay = new Date(currentYear, currentMonth, 0);
-      const daysInMonth = lastDay.getDate();
-      const startDow = firstDay.getDay();
-
-      const events = getEventsForMonth(currentYear, currentMonth);
-
-      const today = new Date();
-      const isCurrentMonth = today.getFullYear() === currentYear && (today.getMonth() + 1) === currentMonth;
-      const todayDate = today.getDate();
-
-      let html = ['日','月','火','水','木','金','土'].map(d => `<div class="calendar-dow">${d}</div>`).join('');
-      for (let i = 0; i < startDow; i++) html += '<div class="calendar-day empty"></div>';
-
-      for (let d = 1; d <= daysInMonth; d++) {
-        const hasEvent = !!(events[d] && events[d].length);
-        const isToday = isCurrentMonth && d === todayDate;
-
-        let classes = 'calendar-day';
-        if (hasEvent) classes += ' has-event';
-        if (isToday) classes += ' today';
-
-        const placeName = hasEvent ? `<div class="calendar-place">${getShortName(events[d][0].name)}</div>` : '';
-        html += `<div class="${classes}" data-day="${d}">
-          <span class="calendar-date">${d}</span>
-          ${placeName}
-        </div>`;
-      }
-
-      grid.innerHTML = html;
-
-      grid.querySelectorAll('.calendar-day.has-event').forEach(el => {
-        el.addEventListener('click', () => {
-          const day = parseInt(el.dataset.day, 10);
-          showEventModal(day, events[day]);
-        });
-      });
-
-      updateNavDisabled();
-    }
-
-    function showEventModal(day, eventList) {
-      const modal = document.getElementById('modal');
-      const event = eventList[0];
-
-      document.getElementById('modalDate').textContent = `${currentYear}年${currentMonth}月${day}日`;
-      document.getElementById('modalTitle').textContent = event.name;
-      document.getElementById('modalTime').textContent = event.time || '時間未定';
-
-      const mapLink = document.getElementById('modalMap');
-      if (event.lat && event.lng) {
-        mapLink.href = `https://www.google.com/maps?q=${event.lat},${event.lng}`;
-        mapLink.style.display = 'block';
-      } else {
-        mapLink.style.display = 'none';
-      }
-      modal.classList.add('active');
-    }
-
-    document.getElementById('modal').addEventListener('click', e => {
-      if (e.target.id === 'modal' || e.target.id === 'modalClose') {
-        document.getElementById('modal').classList.remove('active');
-      }
-    });
-
-    document.getElementById('prevMonth').addEventListener('click', () => {
-      if (minYM && ymToNum(currentYear, currentMonth) <= ymToNum(minYM.y, minYM.m)) return;
-      currentMonth--;
-      if (currentMonth < 1) { currentMonth = 12; currentYear--; }
-      const clamped = clampYM(currentYear, currentMonth);
-      currentYear = clamped.y; currentMonth = clamped.m;
-      renderCalendar();
-    });
-
-    document.getElementById('nextMonth').addEventListener('click', () => {
-      if (maxYM && ymToNum(currentYear, currentMonth) >= ymToNum(maxYM.y, maxYM.m)) return;
-      currentMonth++;
-      if (currentMonth > 12) { currentMonth = 1; currentYear++; }
-      const clamped = clampYM(currentYear, currentMonth);
-      currentYear = clamped.y; currentMonth = clamped.m;
-      renderCalendar();
-    });
-
-    function initCalendarRangeAndStartMonth() {
-      computeMinMaxYM();
-
-      const t = new Date();
-      const desired = clampYM(t.getFullYear(), t.getMonth() + 1);
-      currentYear = desired.y;
-      currentMonth = desired.m;
-
-      // データがあるなら "最後の月" を初期表示にしたい場合はこっち
-      // if (maxYM) { currentYear = maxYM.y; currentMonth = maxYM.m; }
-    }
-
-    // ===== map =====
-    function initMap() {
-      if (!window.L) return; // Leaflet 未ロード時の保険
-
-      mapInstance = L.map('map').setView([35.75, 139.75], 10);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© OSM © CARTO'
-      }).addTo(mapInstance);
-
-      const icon = L.icon({ iconUrl: 'icon.png', iconSize: [44, 44], iconAnchor: [22, 32], popupAnchor: [0, -28] });
-
-      const spots = getAllSpotsFlat();
-      const list = document.getElementById('spotList');
-      list.innerHTML = "";
-      markersArray = [];
-
-      spots.forEach((s, i) => {
-        if (s.lat && s.lng) {
-          const m = L.marker([s.lat, s.lng], { icon }).addTo(mapInstance).bindPopup(
-            `<strong>${s.name}</strong><br>${s.year ? (s.year + '年') : ''}${s.date}${s.time ? ' ・ ' + s.time : ''}<br>` +
-            `<a href="https://www.google.com/maps?q=${s.lat},${s.lng}" target="_blank">Googleマップで開く</a>`
-          );
-          markersArray[i] = m;
-        }
-        const li = document.createElement('li');
-        li.innerHTML = `<span class="spot-name">${s.name}</span> <span class="badge">${s.year ? (s.year + '/') : ''}${s.date}</span>`;
-        li.addEventListener('click', () => {
-          if (markersArray[i]) {
-            mapInstance.setView(markersArray[i].getLatLng(), 14, { animate: true });
-            markersArray[i].openPopup();
-          }
-        });
-        list.appendChild(li);
-      });
-
-      const existing = markersArray.filter(Boolean);
-      if (existing.length) mapInstance.fitBounds(L.featureGroup(existing).getBounds().pad(0.15));
-    }
-
-    // ===== SW register =====
-    async function registerSW() {
-      if (!('serviceWorker' in navigator)) return null;
-      return await navigator.serviceWorker.register(SW_URL, { scope: BASE });
-    }
-
-    // ===== push helpers =====
-    function b64ToUint8Array(base64String) {
-      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-      const rawData = atob(base64);
-      const outputArray = new Uint8Array(rawData.length);
-      for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
-      return outputArray;
-    }
-
-    async function getVapidPublicKey() {
-      const res = await fetch(`${PUSH_API_BASE}/vapid`, { method: "GET" });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.publicKey) throw new Error(data.error || "vapid fetch failed");
-      return data.publicKey;
-    }
-
-    function getSelectedHour() {
-      const v = document.querySelector('input[name="notifyHour"]:checked')?.value || "21";
-      return (v === "18") ? 18 : 21;
-    }
-
-    function getSelectedPlaces() {
-      const all = document.getElementById("place_all").checked;
-      if (all) return [];
-      return [...document.querySelectorAll(".placeChk:checked")].map(x => x.value);
-    }
-
-    function syncPlaceUI() {
-      const all = document.getElementById("place_all").checked;
-      const placeOptions = document.querySelectorAll("#placeList .settings-option");
-      placeOptions.forEach(opt => {
-        if (all) opt.classList.add("disabled");
-        else opt.classList.remove("disabled");
-      });
-      document.querySelectorAll(".placeChk").forEach(chk => {
-        chk.disabled = all;
-        if (all) chk.checked = false;
-      });
-    }
-
-    document.getElementById("place_all").addEventListener("change", syncPlaceUI);
-    document.querySelectorAll(".placeChk").forEach(chk => chk.addEventListener("change", () => {
-      if (chk.checked) document.getElementById("place_all").checked = false;
-      syncPlaceUI();
-    }));
-
-    async function upsertSubscription(subscription, hour, places) {
-      const body = { subscription, places, hour };
-      const res = await fetch(`${PUSH_API_BASE}/subs/upsert`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) throw new Error(data.error || "upsert failed");
-      return data;
-    }
-
-    async function doPushRegister() {
-      const statusEl = document.getElementById("pushStatus");
-      statusEl.className = "settings-status loading";
-      statusEl.textContent = "⏳ 登録中…";
-
-      if (!("Notification" in window)) {
-        statusEl.className = "settings-status error";
-        statusEl.textContent = "❌ このブラウザは通知に未対応";
-        return;
-      }
-
-      const reg = await registerSW();
-      if (!reg) {
-        statusEl.className = "settings-status error";
-        statusEl.textContent = "❌ SW登録に失敗";
-        return;
-      }
-
-      if (!reg.pushManager) {
-        statusEl.className = "settings-status error";
-        statusEl.textContent = "❌ Push未対応（iPhoneはホーム画面に追加してSafariで開く）";
-        return;
-      }
-
-      const perm = await Notification.requestPermission();
-      if (perm !== "granted") {
-        statusEl.className = "settings-status error";
-        statusEl.textContent = "❌ 通知が許可されていません";
-        return;
-      }
-
-      const publicKey = await getVapidPublicKey();
-
-      let sub = await reg.pushManager.getSubscription();
-      if (!sub) {
-        sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: b64ToUint8Array(publicKey)
-        });
-      }
-
-      const hour = getSelectedHour();
-      const places = getSelectedPlaces();
-
-      await upsertSubscription(sub, hour, places);
-
-      statusEl.className = "settings-status success";
-      statusEl.textContent = "✅ 登録完了！通知が届くようになりました";
-    }
-
-    document.getElementById("pushBtn").addEventListener("click", () => {
-      doPushRegister().catch(err => {
-        console.error(err);
-        const statusEl = document.getElementById("pushStatus");
-        statusEl.className = "settings-status error";
-        statusEl.textContent = "❌ " + (err?.message || String(err));
-      });
-    });
-
-    document.addEventListener('DOMContentLoaded', () => {
-      syncPlaceUI();
-
-      // ★ここが重要：データ範囲を読んでから表示開始
-      initCalendarRangeAndStartMonth();
-      renderCalendar();
-
-      registerSW().catch(() => {});
-    });
-  </script>
+<script src="app.js"></script>
 </body>
 </html>
