@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kanatake-v10';
+const CACHE_NAME = 'kanatake-v11';
 
 // ===== Utils =====
 function getBasePath() {
@@ -7,11 +7,12 @@ function getBasePath() {
 }
 
 function isCoreAsset(pathname, BASE) {
-  // “アプリの心臓部”は必ずネット優先で取りに行く
+  // "アプリの心臓部"は必ずネット優先で取りに行く
   const core = new Set([
     BASE,
     BASE + 'index.html',
     BASE + 'style.css',
+    BASE + 'app.js',
     BASE + 'spots.js',
     BASE + 'spots-all.js',
     BASE + 'manifest.json',
@@ -40,11 +41,12 @@ async function cachePutSafe(cache, req, res) {
 self.addEventListener('install', (e) => {
   const BASE = getBasePath();
 
-  // ここは“必須級”だけにする（失敗で全体が壊れるのを防ぐ）
+  // ここは"必須級"だけにする（失敗で全体が壊れるのを防ぐ）
   const urlsToCache = [
     BASE,
     BASE + 'index.html',
     BASE + 'style.css',
+    BASE + 'app.js',
     BASE + 'spots.js',
     BASE + 'spots-all.js',
     BASE + 'manifest.json',
