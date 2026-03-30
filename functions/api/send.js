@@ -2,6 +2,7 @@
 // - spots-feed.json から「明日」の出店を拾う
 // - KVの購読者へ Web Push 送信
 // - hour(18/21) / places(placeId or ALL) フィルタ対応
+// - hour が null または places が ["off"] の購読者はスキップ
 //
 // 重要:
 // - env に以下が必要
@@ -36,7 +37,6 @@ export async function onRequest({ request, env }) {
   // Cron から hour 指定（任意）
   let filterHour = null;
   if (request.method === "POST") {
-    // hour だけ読みたいが、壊れたJSONでも落ちないようにする
     try {
       const b = await request.json();
       if (b?.hour === 18 || b?.hour === 21) filterHour = b.hour;
@@ -94,8 +94,14 @@ export async function onRequest({ request, env }) {
       const endpoint = rec?.endpoint || rec?.subscription?.endpoint;
       if (!endpoint) { skipped++; continue; }
 
-      // hour 正規化（古いデータで null とか変な値がいても 21 扱い）
-      const hourPref = (rec.hour === 18 || rec.hour === 21) ? rec.hour : 21;
+      // hour 正規化: 18/21 以外は null（通知OFF扱い）
+      const hourPref = (rec.hour === 18 || rec.hour === 21) ? rec.hour : null;
+
+      // hour が null なら通知OFF → スキップ
+      if (hourPref === null) {
+        skipped++;
+        continue;
+      }
 
       // hourフィルタ：Cron が 18/21 を投げてきたら「一致する購読だけ送る」
       if (filterHour !== null && hourPref !== filterHour) {
@@ -104,10 +110,17 @@ export async function onRequest({ request, env }) {
       }
 
       // places フィルタ
+      // - places が ["off"] => 通知OFF → スキップ
       // - places が空 => 全部通知
       // - "ALL" => 全部通知（互換）
       // - それ以外 => placeId一致で通知
       const places = Array.isArray(rec.places) ? rec.places : [];
+
+      if (places.includes("off")) {
+        skipped++;
+        continue;
+      }
+
       const placeOK =
         (places.length === 0) ||
         places.includes("ALL") ||
@@ -157,7 +170,6 @@ function getTomorrowYmdJST() {
     day: "2-digit"
   });
 
-  // JST 今日（文字列）を作る
   const parts = fmt.formatToParts(now);
   const y = parts.find(p => p.type === "year")?.value;
   const m = parts.find(p => p.type === "month")?.value;
@@ -214,7 +226,6 @@ async function sendWebPush(env, subscription, spotInfo) {
     url: "/"
   });
 
-  // payload あり（普通はこっち）
   if (subscription.keys?.p256dh && subscription.keys?.auth) {
     const encrypted = await encryptPayload(subscription.keys, new TextEncoder().encode(payload));
     return fetch(endpoint, {
@@ -229,7 +240,6 @@ async function sendWebPush(env, subscription, spotInfo) {
     });
   }
 
-  // keys無し（理屈上は0バイト送信）
   return fetch(endpoint, {
     method: "POST",
     headers: {
@@ -279,7 +289,6 @@ async function encryptPayload(keys, payload) {
   const cek = await hkdf(salt, ikm, new TextEncoder().encode("Content-Encoding: aes128gcm\0"), 16);
   const nonce = await hkdf(salt, ikm, new TextEncoder().encode("Content-Encoding: nonce\0"), 12);
 
-  // padding（RFC8291系の実装互換）
   const paddedPayload = new Uint8Array(payload.length + 1);
   paddedPayload.set(payload, 0);
   paddedPayload[payload.length] = 2;
