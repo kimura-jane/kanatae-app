@@ -22,10 +22,11 @@ export async function onRequest({ request, env }) {
     return json({ ok:false, error:"subscription.endpoint required" }, 400, allow);
   }
 
-  // hour は 18/21 のみ
-  const hour = body.hour === 18 ? 18 : 21;
+  // hour は 18/21 のみ許可、それ以外は null（通知OFF扱い）
+  const hour = (body.hour === 18 || body.hour === 21) ? body.hour : null;
 
   // places:
+  // - ["off"] を受け取ったらそのまま保存（通知OFF）
   // - "ALL" を受け取ったら「空配列＝全部」に統一
   // - 未指定も「空配列＝全部」に統一
   const rawPlaces = Array.isArray(body.places) ? body.places : [];
@@ -37,7 +38,7 @@ export async function onRequest({ request, env }) {
   const record = {
     subscription,
     endpoint: subscription.endpoint,
-    places,   // ← 空配列なら「全部」
+    places,
     hour,
     updatedAt: new Date().toISOString(),
   };
