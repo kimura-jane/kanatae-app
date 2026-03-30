@@ -165,7 +165,13 @@ function syncPlaceUI() {
     });
   });
 
-  if (allChk.checked) {
+  // ★ 初期状態の反映（place_off が checked なら全部無効化）
+  if (offChk.checked) {
+    allChk.checked = false;
+    allChk.disabled = true;
+    placeChks.forEach(c => { c.checked = false; c.disabled = true; });
+    if (placeList) placeList.style.opacity = "0.4";
+  } else if (allChk.checked) {
     placeChks.forEach(c => { c.disabled = true; });
     if (placeList) placeList.style.opacity = "0.4";
   }
@@ -1074,7 +1080,7 @@ async function registerSW() {
 
       // 通知設定値を取得
       const hourRadio = document.querySelector('input[name="notifyHour"]:checked');
-      const hour = hourRadio ? parseInt(hourRadio.value) : 21;
+      const hour = hourRadio ? parseInt(hourRadio.value) : null;
 
       const isOff = document.getElementById("place_off").checked;
       const allPlaces = document.getElementById("place_all").checked;
