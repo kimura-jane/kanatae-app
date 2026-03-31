@@ -254,55 +254,69 @@
 
     <!-- ===== 設定 ===== -->
     <section class="page" id="page-settings">
-      <div class="section-card">
-        <h2 class="section-title">🔔 通知設定</h2>
-        <div class="settings-card">
-          <p class="settings-card-title">⏰ 通知する時間</p>
-          <label class="settings-option">
-            <input type="radio" name="notifyHour" value="18">
-            <span class="settings-option-text">前日 18:00 に通知</span>
-          </label>
-          <label class="settings-option">
-            <input type="radio" name="notifyHour" value="21">
-            <span class="settings-option-text">前日 21:00 に通知</span>
-          </label>
+
+      <!-- ===== 通知設定（新UI・ラジオボタン方式） ===== -->
+      <div class="section-card" id="push-section">
+        <h2 class="section-title">🔔 出店通知</h2>
+        <label class="settings-option">
+          <input type="radio" name="pushOnOff" value="off" checked>
+          <span class="settings-option-text">OFF（通知しない）</span>
+        </label>
+        <label class="settings-option">
+          <input type="radio" name="pushOnOff" value="on">
+          <span class="settings-option-text">ON（通知する）</span>
+        </label>
+
+        <div id="pushSettingsDetail" style="display:none;">
+          <div class="settings-card">
+            <p class="settings-card-title">⏰ 通知する時間</p>
+            <label class="settings-option">
+              <input type="radio" name="notifyHour" value="18">
+              <span class="settings-option-text">前日 18:00 に通知</span>
+            </label>
+            <label class="settings-option">
+              <input type="radio" name="notifyHour" value="21" checked>
+              <span class="settings-option-text">前日 21:00 に通知</span>
+            </label>
+          </div>
+
+          <div class="settings-card">
+            <p class="settings-card-title">📍 通知する出店場所</p>
+            <label class="settings-option">
+              <input type="radio" name="placeMode" value="all" checked>
+              <span class="settings-option-text">すべての出店を通知する</span>
+            </label>
+            <label class="settings-option">
+              <input type="radio" name="placeMode" value="custom">
+              <span class="settings-option-text">場所を選んで通知</span>
+            </label>
+            <div class="settings-places" id="placeList">
+              <p class="settings-places-title">通知する場所を選択：</p>
+              <label class="settings-option">
+                <input type="checkbox" class="placeChk" value="sakura_hospital">
+                <span class="settings-option-text">川口さくら病院</span>
+              </label>
+              <label class="settings-option">
+                <input type="checkbox" class="placeChk" value="dokkyo">
+                <span class="settings-option-text">獨協大学</span>
+              </label>
+              <label class="settings-option">
+                <input type="checkbox" class="placeChk" value="saitama_cityhall">
+                <span class="settings-option-text">さいたま市役所</span>
+              </label>
+              <label class="settings-option">
+                <input type="checkbox" class="placeChk" value="dynam_togasaki">
+                <span class="settings-option-text">ダイナム戸ケ崎</span>
+              </label>
+            </div>
+            <div class="settings-note">
+              <span class="settings-note-icon">💡</span>
+              <span>「場所を選んで通知」を選ぶと、個別の場所を選べます</span>
+            </div>
+          </div>
         </div>
 
-        <div class="settings-card">
-          <p class="settings-card-title">📍 通知する出店場所</p>
-          <label class="settings-option">
-            <input type="checkbox" id="place_all">
-            <span class="settings-option-text">すべての出店を通知する</span>
-          </label>
-          <label class="settings-option">
-            <input type="checkbox" id="place_off" checked>
-            <span class="settings-option-text">OFF（通知しない）</span>
-          </label>
-          <div id="placeList" class="settings-places">
-            <p class="settings-places-title">または、場所を選んで通知：</p>
-            <label class="settings-option">
-              <input type="checkbox" class="placeChk" value="sakura_hospital">
-              <span class="settings-option-text">川口さくら病院</span>
-            </label>
-            <label class="settings-option">
-              <input type="checkbox" class="placeChk" value="dokkyo">
-              <span class="settings-option-text">獨協大学</span>
-            </label>
-            <label class="settings-option">
-              <input type="checkbox" class="placeChk" value="saitama_cityhall">
-              <span class="settings-option-text">さいたま市役所</span>
-            </label>
-            <label class="settings-option">
-              <input type="checkbox" class="placeChk" value="dynam_togasaki">
-              <span class="settings-option-text">ダイナム戸ケ崎</span>
-            </label>
-          </div>
-          <div class="settings-note">
-            <span class="settings-note-icon">💡</span>
-            <span>「すべての出店を通知する」がONの場合、個別の場所選択は無効になります</span>
-          </div>
-        </div>
-        <button class="btn btn-primary btn-full" id="pushBtn" type="button">🔔 通知を受け取る</button>
+        <button class="btn btn-primary btn-full" id="pushBtn" type="button">🔔 通知設定を保存</button>
         <p id="pushStatus" class="result-text"></p>
       </div>
 
