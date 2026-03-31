@@ -118,7 +118,6 @@ function initMenuModal() {
 
 // ===== 場所 UI 制御（新・ラジオボタン方式） =====
 function syncPlaceUI() {
-  // --- pushOnOff: ON/OFF で詳細の表示/非表示 ---
   var onOffRadios = document.querySelectorAll('input[name="pushOnOff"]');
   var detail = document.getElementById("pushSettingsDetail");
   if (!onOffRadios.length || !detail) return;
@@ -130,7 +129,6 @@ function syncPlaceUI() {
   onOffRadios.forEach(function(r) { r.addEventListener("change", applyOnOff); });
   applyOnOff();
 
-  // --- placeMode: all / custom で個別チェックボックスの有効/無効 ---
   var modeRadios = document.querySelectorAll('input[name="placeMode"]');
   var placeChks = document.querySelectorAll(".placeChk");
   var placeList = document.getElementById("placeList");
@@ -1141,13 +1139,11 @@ async function registerSW() {
   var reg = await navigator.serviceWorker.register("sw.js");
   console.log("SW registered:", reg.scope);
 
-  // ネイティブ（iOS WebView / Capacitor）の場合は別関数で処理
   if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.apnsToken) {
     setupNativePushUI();
     return;
   }
 
-  // ブラウザ Web Push
   var pushBtn = document.getElementById("pushBtn");
   if (!pushBtn) return;
   pushBtn.replaceWith(pushBtn.cloneNode(true));
