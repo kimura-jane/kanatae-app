@@ -1,17 +1,15 @@
 // ===== 設定 =====
 const API_BASE = "https://kanatake-api.la-kofu.workers.dev";
 const PUSH_API_BASE = "https://kanatae-push.la-kofu.workers.dev";
-const ASSETS_BASE = "";  // 相対パス（同じリポジトリ内）
+const ASSETS_BASE = "";
 const APP_URL = "https://kimura-jane.github.io/kanatae-app";
 const SHARE_URL = "https://kimura-jane.github.io/kanatae-app";
 const MENU_IMAGE_BASE = "https://raw.githubusercontent.com/kimura-jane/kanatake-v2/main/gazo/";
-
 const CHOICE_IMAGES = {
   "お茶": "https://raw.githubusercontent.com/kimura-jane/kanatake-v2/main/www/IMG_5006.jpeg",
   "ラムネ": "https://raw.githubusercontent.com/kimura-jane/kanatake-v2/main/www/IMG_5012.jpeg",
   "ダンゴ": "https://raw.githubusercontent.com/kimura-jane/kanatake-v2/main/www/IMG_5007.jpeg"
 };
-
 const CHOICE_EMOJI = {
   "お茶": "🍵 お茶",
   "ラムネ": "🥤 ラムネ",
@@ -20,7 +18,6 @@ const CHOICE_EMOJI = {
 
 // ===== 端末ID（localStorage のみ） =====
 const DEVICE_ID_KEY = "kanatake_device_id";
-
 function getDeviceId() {
   let id = localStorage.getItem(DEVICE_ID_KEY);
   if (!id) id = sessionStorage.getItem(DEVICE_ID_KEY);
@@ -29,7 +26,6 @@ function getDeviceId() {
   sessionStorage.setItem(DEVICE_ID_KEY, id);
   return id;
 }
-
 let DEVICE_ID = getDeviceId();
 
 // ===== ページナビ =====
@@ -41,14 +37,15 @@ let mapInstance = null;
 let markersArray = [];
 
 navBtns.forEach(btn => {
-  btn.addEventListener("click", () => { switchPage(btn.dataset.page); });
+  btn.addEventListener("click", () => {
+    switchPage(btn.dataset.page);
+  });
 });
 
 function switchPage(page) {
   currentPage = page;
   navBtns.forEach(b => b.classList.toggle("active", b.dataset.page === page));
   pages.forEach(p => p.classList.toggle("active", p.id === `page-${page}`));
-
   if (page === "home" && !mapInitialized) {
     setTimeout(() => { initMap(); mapInitialized = true; }, 100);
   }
@@ -58,7 +55,6 @@ function switchPage(page) {
   if (page === "reviews") loadReviews();
   if (page === "settings") loadCheckinHistory();
   if (page === "coupon") loadMyCoupons();
-
   const pageEl = document.getElementById(`page-${page}`);
   if (pageEl) pageEl.scrollTop = 0;
 }
@@ -66,27 +62,21 @@ function switchPage(page) {
 // ===== 初期化 =====
 document.addEventListener("DOMContentLoaded", async () => {
   DEVICE_ID = getDeviceId();
-
   await registerDevice();
   document.getElementById("device-id-display").textContent = DEVICE_ID;
-
   initStampGrid();
   await loadPoints();
   await loadNotices();
   initMenuModal();
-
   initCalendarRangeAndStartMonth();
   renderCalendar();
-
   setTimeout(() => {
     if (!mapInitialized) { initMap(); mapInitialized = true; }
   }, 300);
-
   await checkWelcomeCoupon();
   await checkBirthdayCoupon();
   await loadMyCoupons();
   await loadBirthMonth();
-
   syncPlaceUI();
   registerSW().catch(() => {});
 });
@@ -98,7 +88,6 @@ function initMenuModal() {
   const modalName = document.getElementById("menuModalName");
   const closeBtn = document.getElementById("menuModalClose");
   if (!modal || !modalImg || !closeBtn) return;
-
   document.querySelectorAll(".menu-hotspot").forEach(el => {
     el.addEventListener("click", () => {
       const file = el.dataset.menu;
@@ -110,7 +99,6 @@ function initMenuModal() {
       modal.classList.add("active");
     });
   });
-
   document.querySelectorAll(".menu-noriben-item").forEach(el => {
     el.addEventListener("click", () => {
       const file = el.dataset.menu;
@@ -122,69 +110,55 @@ function initMenuModal() {
       modal.classList.add("active");
     });
   });
-
   closeBtn.addEventListener("click", () => { modal.classList.remove("active"); });
-  modal.addEventListener("click", (e) => { if (e.target === modal) modal.classList.remove("active"); });
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) modal.classList.remove("active");
+  });
 }
 
-// ===== 場所 UI 排他制御 =====
+// ===== 場所 UI 制御（新・ラジオボタン方式） =====
 function syncPlaceUI() {
-  const offChk = document.getElementById("place_off");
-  const allChk = document.getElementById("place_all");
-  const placeChks = document.querySelectorAll(".placeChk");
-  const placeList = document.getElementById("placeList");
+  // --- pushOnOff: ON/OFF で詳細の表示/非表示 ---
+  var onOffRadios = document.querySelectorAll('input[name="pushOnOff"]');
+  var detail = document.getElementById("pushSettingsDetail");
+  if (!onOffRadios.length || !detail) return;
 
-  if (!offChk || !allChk) return;
-
-  offChk.addEventListener("change", function() {
-    if (this.checked) {
-      allChk.checked = false; allChk.disabled = true;
-      placeChks.forEach(c => { c.checked = false; c.disabled = true; });
-      if (placeList) placeList.style.opacity = "0.4";
-    } else {
-      allChk.disabled = false; allChk.checked = true;
-      placeChks.forEach(c => { c.disabled = true; });
-      if (placeList) placeList.style.opacity = "0.4";
-    }
-  });
-
-  allChk.addEventListener("change", function() {
-    if (this.checked) {
-      offChk.checked = false;
-      placeChks.forEach(c => { c.checked = false; c.disabled = true; });
-      if (placeList) placeList.style.opacity = "0.4";
-    } else {
-      placeChks.forEach(c => { c.disabled = false; });
-      if (placeList) placeList.style.opacity = "1";
-    }
-  });
-
-  placeChks.forEach(c => {
-    c.addEventListener("change", function() {
-      if ([...placeChks].some(x => x.checked)) { allChk.checked = false; offChk.checked = false; }
-    });
-  });
-
-  // ★ 初期状態の反映（place_off が checked なら全部無効化）
-  if (offChk.checked) {
-    allChk.checked = false;
-    allChk.disabled = true;
-    placeChks.forEach(c => { c.checked = false; c.disabled = true; });
-    if (placeList) placeList.style.opacity = "0.4";
-  } else if (allChk.checked) {
-    placeChks.forEach(c => { c.disabled = true; });
-    if (placeList) placeList.style.opacity = "0.4";
+  function applyOnOff() {
+    var val = document.querySelector('input[name="pushOnOff"]:checked');
+    detail.style.display = (val && val.value === "on") ? "block" : "none";
   }
+  onOffRadios.forEach(function(r) { r.addEventListener("change", applyOnOff); });
+  applyOnOff();
+
+  // --- placeMode: all / custom で個別チェックボックスの有効/無効 ---
+  var modeRadios = document.querySelectorAll('input[name="placeMode"]');
+  var placeChks = document.querySelectorAll(".placeChk");
+  var placeList = document.getElementById("placeList");
+
+  function applyPlaceMode() {
+    var mode = document.querySelector('input[name="placeMode"]:checked');
+    var isCustom = mode && mode.value === "custom";
+    placeChks.forEach(function(c) {
+      c.disabled = !isCustom;
+      if (!isCustom) c.checked = false;
+    });
+    if (placeList) placeList.style.opacity = isCustom ? "1" : "0.4";
+  }
+  modeRadios.forEach(function(r) { r.addEventListener("change", applyPlaceMode); });
+  applyPlaceMode();
 }
 
 // ===== デバイス登録 =====
 async function registerDevice() {
   try {
     await fetch(`${API_BASE}/devices`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ device_id: DEVICE_ID })
     });
-  } catch (e) { console.warn("device register failed:", e); }
+  } catch (e) {
+    console.warn("device register failed:", e);
+  }
 }
 
 // ===== お知らせ =====
@@ -202,10 +176,19 @@ async function loadNotices() {
     const notices = data.notices;
     const latest = notices[0];
     const older = notices.slice(1);
-    let html = `<div class="notice-item"><span class="notice-date">${formatDate(latest.created_at)}</span><div class="notice-body">${renderNoticeBody(latest.body)}</div></div>`;
+    let html = `<div class="notice-item">
+      <span class="notice-date">${formatDate(latest.created_at)}</span>
+      <div class="notice-body">${renderNoticeBody(latest.body)}</div>
+    </div>`;
     if (older.length > 0) {
-      html += `<div id="notices-older-toggle" class="notices-older-toggle">▼ 過去のお知らせ（${older.length}件）</div><div id="notices-older-list" class="notices-older-list" style="display:none;">`;
-      older.forEach(n => { html += `<div class="notice-item"><span class="notice-date">${formatDate(n.created_at)}</span><div class="notice-body">${renderNoticeBody(n.body)}</div></div>`; });
+      html += `<div class="notices-older-toggle" id="notices-older-toggle">▼ 過去のお知らせ（${older.length}件）</div>`;
+      html += `<div id="notices-older-list" style="display:none;">`;
+      older.forEach(n => {
+        html += `<div class="notice-item">
+          <span class="notice-date">${formatDate(n.created_at)}</span>
+          <div class="notice-body">${renderNoticeBody(n.body)}</div>
+        </div>`;
+      });
       html += `</div>`;
     }
     el.innerHTML = html;
@@ -214,8 +197,13 @@ async function loadNotices() {
     if (toggle) {
       toggle.addEventListener("click", function() {
         const list = document.getElementById("notices-older-list");
-        if (list.style.display === "none") { list.style.display = "block"; toggle.textContent = "▲ 過去のお知らせを閉じる"; }
-        else { list.style.display = "none"; toggle.textContent = `▼ 過去のお知らせ（${older.length}件）`; }
+        if (list.style.display === "none") {
+          list.style.display = "block";
+          toggle.textContent = "▲ 過去のお知らせを閉じる";
+        } else {
+          list.style.display = "none";
+          toggle.textContent = `▼ 過去のお知らせ（${older.length}件）`;
+        }
       });
     }
     if (el.querySelector(".twitter-tweet")) loadTwitterWidget();
@@ -241,9 +229,7 @@ function loadTwitterWidget() {
   document.head.appendChild(s);
 }
 
-document.getElementById("notices-more-btn").addEventListener("click", () => {
-  loadNotices();
-});
+document.getElementById("notices-more-btn").addEventListener("click", () => { loadNotices(); });
 
 // ===== スタンプ / ポイント =====
 let megamiCouponActive = false;
@@ -252,7 +238,7 @@ function initStampGrid() {
   const grid = document.getElementById("stamp-grid");
   let html = "";
   for (let i = 0; i < 20; i++) {
-    html += `<div class="stamp-dot" data-index="${i}"></div>`;
+    html += `<div class="stamp-dot"></div>`;
   }
   grid.innerHTML = html;
 }
@@ -268,7 +254,9 @@ async function loadPoints() {
     updateStampUI(data.current_points || 0);
     megamiCouponActive = !!(data.megami_coupon_active);
     updateMegamiCouponUI();
-  } catch (e) { console.warn("load points failed:", e); }
+  } catch (e) {
+    console.warn("load points failed:", e);
+  }
 }
 
 function updateStampUI(points) {
@@ -299,7 +287,9 @@ document.getElementById("redeem-btn").addEventListener("click", async () => {
     } else {
       alert("交換できませんでした: " + (data.error || ""));
     }
-  } catch (e) { alert("通信エラーが発生しました"); }
+  } catch (e) {
+    alert("通信エラーが発生しました");
+  }
 });
 
 document.getElementById("megami-use-btn").addEventListener("click", async () => {
@@ -316,7 +306,9 @@ document.getElementById("megami-use-btn").addEventListener("click", async () => 
       updateMegamiCouponUI();
       alert("✅ 使用済みにしました！ありがとうございます！");
     }
-  } catch (e) { alert("通信エラーが発生しました"); }
+  } catch (e) {
+    alert("通信エラーが発生しました");
+  }
 });
 
 // ===== カレンダー =====
@@ -401,8 +393,10 @@ function initCalendarRangeAndStartMonth() {
 
 function getShortName(name) {
   const shortcuts = {
-    '川口さくら病院': 'さくら病院', '獨協大学 草加キャンパス': '獨協大学',
-    'さいたま市役所 浦和本庁舎': 'さいたま市役所', 'ダイナム戸ヶ崎店': 'ダイナム'
+    '川口さくら病院': 'さくら病院',
+    '獨協大学 草加キャンパス': '獨協大学',
+    'さいたま市役所 浦和本庁舎': 'さいたま市役所',
+    'ダイナム戸ヶ崎店': 'ダイナム'
   };
   return shortcuts[name] || (name || "").substring(0, 6);
 }
@@ -411,19 +405,15 @@ function renderCalendar() {
   const title = document.getElementById("calendarTitle");
   const grid = document.getElementById("calendarGrid");
   title.textContent = `${currentYear}年${currentMonth}月`;
-
   const firstDay = new Date(currentYear, currentMonth - 1, 1);
   const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
   const startDow = firstDay.getDay();
   const events = getEventsForMonth(currentYear, currentMonth);
-
   const today = new Date();
   const isCurrentMonth = today.getFullYear() === currentYear && today.getMonth() + 1 === currentMonth;
   const todayDate = today.getDate();
-
   let html = ["日","月","火","水","木","金","土"].map(d => `<div class="calendar-dow">${d}</div>`).join("");
   for (let i = 0; i < startDow; i++) html += '<div class="calendar-day empty"></div>';
-
   for (let d = 1; d <= daysInMonth; d++) {
     const hasEvent = !!(events[d] && events[d].length);
     const isToday = isCurrentMonth && d === todayDate;
@@ -431,17 +421,15 @@ function renderCalendar() {
     if (hasEvent) cls += " has-event";
     if (isToday) cls += " today";
     const place = hasEvent ? `<div class="calendar-place">${getShortName(events[d][0].name)}</div>` : "";
-    html += `<div class="${cls}" data-day="${d}"><span class="calendar-date">${d}</span>${place}</div>`;
+    html += `<div class="${cls}" data-day="${d}"><div class="calendar-date">${d}</div>${place}</div>`;
   }
   grid.innerHTML = html;
-
   grid.querySelectorAll(".calendar-day.has-event").forEach(el => {
     el.addEventListener("click", () => {
       const day = parseInt(el.dataset.day, 10);
       showEventModal(day, events[day]);
     });
   });
-
   const prevBtn = document.getElementById("prevMonth");
   const nextBtn = document.getElementById("nextMonth");
   if (minYM && maxYM) {
@@ -494,28 +482,21 @@ function initMap() {
   if (!window.L) return;
   const mapEl = document.getElementById("map");
   if (!mapEl) return;
-
   mapInstance = L.map("map").setView([35.82, 139.80], 11);
   L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
     attribution: "© OSM © CARTO"
   }).addTo(mapInstance);
-
   const iconUrl = ASSETS_BASE ? `${ASSETS_BASE}/icon.png` : "icon.png";
-  const icon = L.icon({
-    iconUrl: iconUrl,
-    iconSize: [40, 40], iconAnchor: [20, 30], popupAnchor: [0, -26]
-  });
-
+  const icon = L.icon({ iconUrl: iconUrl, iconSize: [40, 40], iconAnchor: [20, 30], popupAnchor: [0, -26] });
   const spots = Array.isArray(window.spots) ? window.spots : [];
   const list = document.getElementById("spotList");
   list.innerHTML = "";
   markersArray = [];
-
   spots.forEach((s, i) => {
     if (s.lat && s.lng) {
       const m = L.marker([s.lat, s.lng], { icon }).addTo(mapInstance).bindPopup(
         `<strong>${s.name}</strong><br>${s.date || ""}${s.time ? " ・ " + s.time : ""}<br>` +
-        `<a href="https://www.google.com/maps?q=${s.lat},${s.lng}" target="_blank" rel="noopener">Googleマップで開く</a>`
+        `<a href="https://www.google.com/maps?q=${s.lat},${s.lng}" target="_blank">Googleマップで開く</a>`
       );
       markersArray[i] = m;
     }
@@ -529,7 +510,6 @@ function initMap() {
     });
     list.appendChild(li);
   });
-
   const existing = markersArray.filter(Boolean);
   if (existing.length) mapInstance.fitBounds(L.featureGroup(existing).getBounds().pad(0.15));
 }
@@ -539,7 +519,6 @@ function getTodaySpot() {
   const now = new Date();
   const month = now.getMonth() + 1;
   const day = now.getDate();
-
   if (Array.isArray(window.spots)) {
     for (const s of window.spots) {
       if (!s.lat || !s.lng) continue;
@@ -547,7 +526,6 @@ function getTodaySpot() {
       if (m && parseInt(m[1], 10) === month && parseInt(m[2], 10) === day) return s;
     }
   }
-
   if (window.spotsAllByYear) {
     const year = now.getFullYear();
     const arr = window.spotsAllByYear[year] || [];
@@ -557,7 +535,6 @@ function getTodaySpot() {
       if (m && parseInt(m[1], 10) === month && parseInt(m[2], 10) === day) return s;
     }
   }
-
   return null;
 }
 
@@ -601,7 +578,6 @@ document.querySelectorAll("#welcome-choices .welcome-choice-btn").forEach(btn =>
 document.getElementById("welcome-confirm-btn").addEventListener("click", async () => {
   if (!welcomeSelectedChoice) return;
   if (!confirm(`⚠️ 1回限りです！\n\n「${welcomeSelectedChoice}」をもらいますか？\n\n店主の目の前で押してください。`)) return;
-
   try {
     const res = await fetch(`${API_BASE}/welcome-coupon`, {
       method: "POST",
@@ -620,7 +596,9 @@ document.getElementById("welcome-confirm-btn").addEventListener("click", async (
     } else {
       alert("エラー: " + (data.error || "不明なエラー"));
     }
-  } catch (e) { alert("通信エラーが発生しました"); }
+  } catch (e) {
+    alert("通信エラーが発生しました");
+  }
 });
 
 // ===== 誕生日クーポン =====
@@ -643,7 +621,9 @@ async function checkBirthdayCoupon() {
       document.getElementById("birthday-coupon-content").style.display = "none";
       document.getElementById("birthday-coupon-used").style.display = "block";
     }
-  } catch (e) { console.warn("birthday coupon check failed:", e); }
+  } catch (e) {
+    console.warn("birthday coupon check failed:", e);
+  }
 }
 
 document.querySelectorAll("#birthday-choices .birthday-choice-btn").forEach(btn => {
@@ -659,7 +639,6 @@ document.querySelectorAll("#birthday-choices .birthday-choice-btn").forEach(btn 
 document.getElementById("birthday-confirm-btn").addEventListener("click", async () => {
   if (!birthdaySelectedChoice) return;
   if (!confirm(`⚠️ 年1回限りです！\n\n「${birthdaySelectedChoice}」をもらいますか？\n\n店主の目の前で押してください。`)) return;
-
   try {
     const res = await fetch(`${API_BASE}/birthday-coupon`, {
       method: "POST",
@@ -678,18 +657,22 @@ document.getElementById("birthday-confirm-btn").addEventListener("click", async 
     } else {
       alert("エラー: " + (data.error || "不明なエラー"));
     }
-  } catch (e) { alert("通信エラーが発生しました"); }
+  } catch (e) {
+    alert("通信エラーが発生しました");
+  }
 });
 
 // ===== FiNANCiEクーポン（コード引換） =====
 document.getElementById("coupon-code-btn").addEventListener("click", async () => {
   const code = document.getElementById("coupon-code-input").value.trim();
   const resultEl = document.getElementById("coupon-code-result");
-  if (!code) { resultEl.className = "result-text error"; resultEl.textContent = "コードを入力してください"; return; }
-
+  if (!code) {
+    resultEl.className = "result-text error";
+    resultEl.textContent = "コードを入力してください";
+    return;
+  }
   resultEl.className = "result-text loading";
   resultEl.textContent = "確認中…";
-
   try {
     const res = await fetch(`${API_BASE}/redeem-code`, {
       method: "POST",
@@ -728,22 +711,15 @@ async function loadMyCoupons() {
     area.style.display = "block";
     list.innerHTML = data.coupons.map(c => {
       const isUsed = !!c.used;
-      return `
-        <div class="my-coupon-card ${isUsed ? "used" : ""}">
-          ${c.image ? `<img src="${escapeHtml(c.image)}" class="my-coupon-img" onerror="this.style.display='none'">` : ""}
-          <div class="my-coupon-info">
-            <div class="my-coupon-name">${escapeHtml(c.name)}</div>
-            <div class="my-coupon-prize">${escapeHtml(c.prize)}</div>
-            <div class="my-coupon-status">
-              ${isUsed
-                ? `✅ 使用済み（${formatDate(c.used_at)}）`
-                : `取得: ${formatDate(c.acquired_at)}`
-              }
-            </div>
-          </div>
-          ${!isUsed ? `<button class="btn btn-danger btn-sm" onclick="useMyCoupon('${escapeHtml(c.code)}')">使用済みにする</button>` : ""}
+      return `<div class="my-coupon-card ${isUsed ? 'used' : ''}">
+        ${c.image ? `<img class="my-coupon-img" src="${c.image}" alt="">` : ""}
+        <div class="my-coupon-info">
+          <div class="my-coupon-name">${escapeHtml(c.name)}</div>
+          <div class="my-coupon-prize">${escapeHtml(c.prize)}</div>
+          <div class="my-coupon-status">${isUsed ? `✅ 使用済み（${formatDate(c.used_at)}）` : `取得: ${formatDate(c.acquired_at)}`}</div>
+          ${!isUsed ? `<button class="btn btn-primary btn-sm" onclick="useMyCoupon('${c.code}')">使用済みにする</button>` : ""}
         </div>
-      `;
+      </div>`;
     }).join("");
   } catch (e) {
     console.warn("loadMyCoupons failed:", e);
@@ -766,7 +742,9 @@ async function useMyCoupon(code) {
     } else {
       alert("❌ " + (data.error || "エラーが発生しました"));
     }
-  } catch (e) { alert("❌ 通信エラー"); }
+  } catch (e) {
+    alert("❌ 通信エラー");
+  }
 }
 
 // ===== QRスキャン =====
@@ -776,20 +754,16 @@ document.getElementById("qr-start-btn").addEventListener("click", async () => {
   const resultEl = document.getElementById("qr-result");
   resultEl.className = "result-text";
   resultEl.textContent = "";
-
   if (!window.Html5Qrcode) {
     resultEl.className = "result-text error";
     resultEl.textContent = "❌ QRスキャナーの読み込みに失敗しました";
     return;
   }
-
   if (html5QrCode) {
     try { await html5QrCode.stop(); } catch (e) {}
     html5QrCode = null;
   }
-
   html5QrCode = new Html5Qrcode("qr-reader");
-
   try {
     await html5QrCode.start(
       { facingMode: "environment" },
@@ -811,16 +785,13 @@ async function processCheckin(qrText) {
   const resultEl = document.getElementById("qr-result");
   resultEl.className = "result-text loading";
   resultEl.textContent = "📍 今日の出店場所を確認中…";
-
   const todaySpot = getTodaySpot();
   if (!todaySpot) {
     resultEl.className = "result-text error";
     resultEl.textContent = "❌ 今日の出店データが見つかりません";
     return;
   }
-
   resultEl.textContent = "📍 位置情報を取得中…";
-
   let latitude, longitude;
   try {
     const pos = await new Promise((resolve, reject) => {
@@ -835,18 +806,14 @@ async function processCheckin(qrText) {
     resultEl.textContent = "❌ 位置情報を取得できませんでした。位置情報を許可してください。";
     return;
   }
-
   resultEl.textContent = "⏳ チェックイン中…";
   try {
     const res = await fetch(`${API_BASE}/checkin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        device_id: DEVICE_ID,
-        latitude, longitude,
-        spot_lat: todaySpot.lat,
-        spot_lng: todaySpot.lng,
-        spot_name: todaySpot.name
+        device_id: DEVICE_ID, latitude, longitude,
+        spot_lat: todaySpot.lat, spot_lng: todaySpot.lng, spot_name: todaySpot.name
       })
     });
     const data = await res.json();
@@ -879,25 +846,20 @@ async function loadReviews() {
       el.innerHTML = '<p class="loading-text">まだ口コミはありません</p>';
       return;
     }
-    el.innerHTML = data.reviews.map(r => `
-      <div class="review-item">
-        <span class="review-nickname">${escapeHtml(r.nickname)}</span>
-        <span class="review-date">${formatDate(r.created_at)}</span>
-        <div class="review-body">${escapeHtml(r.body)}</div>
-        ${r.owner_reply ? `
-          <div class="review-reply">
-            <div class="review-reply-label">🍙 店主からの返信</div>
-            ${escapeHtml(r.owner_reply)}
-          </div>
-        ` : ""}
-      </div>
-    `).join("");
+    el.innerHTML = data.reviews.map(r => `<div class="review-item">
+      <span class="review-nickname">${escapeHtml(r.nickname)}</span>
+      <span class="review-date">${formatDate(r.created_at)}</span>
+      <div class="review-body">${escapeHtml(r.body)}</div>
+      ${r.owner_reply ? `<div class="review-reply">
+        <div class="review-reply-label">🍙 店主からの返信</div>
+        ${escapeHtml(r.owner_reply)}
+      </div>` : ""}
+    </div>`).join("");
   } catch (e) {
     el.innerHTML = '<p class="loading-text">読み込みに失敗しました</p>';
   }
 }
 
-// 口コミ投稿
 document.getElementById("review-body").addEventListener("input", function() {
   document.getElementById("review-char-current").textContent = this.value.length;
 });
@@ -906,15 +868,12 @@ document.getElementById("review-submit-btn").addEventListener("click", async () 
   const nickname = document.getElementById("review-nickname").value.trim();
   const body = document.getElementById("review-body").value.trim();
   const resultEl = document.getElementById("review-result");
-
   if (!nickname) { resultEl.className = "result-text error"; resultEl.textContent = "ニックネームを入力してください"; return; }
   if (!body) { resultEl.className = "result-text error"; resultEl.textContent = "口コミを入力してください"; return; }
   if (nickname.length > 50) { resultEl.className = "result-text error"; resultEl.textContent = "ニックネームは50文字以内で入力してください"; return; }
   if (body.length > 600) { resultEl.className = "result-text error"; resultEl.textContent = "口コミは600文字以内で入力してください"; return; }
-
   resultEl.className = "result-text loading";
   resultEl.textContent = "投稿中…";
-
   try {
     const res = await fetch(`${API_BASE}/reviews`, {
       method: "POST",
@@ -945,27 +904,24 @@ async function loadBirthMonth() {
     const data = await res.json();
     if (data.birth_month) {
       const form = document.getElementById("birth-month-form");
-      form.innerHTML = `
-        <div class="birth-month-locked">
-          <p class="birth-month-display">🎂 ${data.birth_month}月</p>
-          <p class="birth-month-note">登録済み（変更不可）</p>
-        </div>
-      `;
+      form.innerHTML = `<div class="birth-month-locked">
+        <div class="birth-month-display">🎂 ${data.birth_month}月</div>
+        <div class="birth-month-note">登録済み（変更不可）</div>
+      </div>`;
     }
-  } catch (e) { console.warn("load birth month failed:", e); }
+  } catch (e) {
+    console.warn("load birth month failed:", e);
+  }
 }
 
 document.getElementById("birth-month-btn").addEventListener("click", async () => {
   const select = document.getElementById("birth-month-select");
   const month = select.value;
   const resultEl = document.getElementById("birth-month-result");
-
   if (!month) { resultEl.className = "result-text error"; resultEl.textContent = "月を選択してください"; return; }
   if (!confirm(`⚠️ ${month}月で登録しますか？\n一度登録すると変更できません。`)) return;
-
   resultEl.className = "result-text loading";
   resultEl.textContent = "登録中…";
-
   try {
     const res = await fetch(`${API_BASE}/birth-month`, {
       method: "POST",
@@ -977,12 +933,10 @@ document.getElementById("birth-month-btn").addEventListener("click", async () =>
       resultEl.className = "result-text success";
       resultEl.textContent = `✅ ${month}月で登録しました！`;
       const form = document.getElementById("birth-month-form");
-      form.innerHTML = `
-        <div class="birth-month-locked">
-          <p class="birth-month-display">🎂 ${month}月</p>
-          <p class="birth-month-note">登録済み（変更不可）</p>
-        </div>
-      `;
+      form.innerHTML = `<div class="birth-month-locked">
+        <div class="birth-month-display">🎂 ${month}月</div>
+        <div class="birth-month-note">登録済み（変更不可）</div>
+      </div>`;
       checkBirthdayCoupon();
     } else {
       resultEl.className = "result-text error";
@@ -1005,12 +959,10 @@ async function loadCheckinHistory() {
       el.innerHTML = '<p class="loading-text">まだ来店履歴はありません</p>';
       return;
     }
-    el.innerHTML = data.history.map(h => `
-      <div class="checkin-item">
-        <span class="checkin-spot">${escapeHtml(h.spot_name)}</span>
-        <span class="checkin-date">${formatDate(h.checked_in_at)}</span>
-      </div>
-    `).join("");
+    el.innerHTML = data.history.map(h => `<div class="checkin-item">
+      <span class="checkin-spot">${escapeHtml(h.spot_name)}</span>
+      <span class="checkin-date">${formatDate(h.checked_in_at)}</span>
+    </div>`).join("");
   } catch (e) {
     el.innerHTML = '<p class="loading-text">読み込みに失敗しました</p>';
   }
@@ -1043,84 +995,169 @@ document.getElementById("cache-clear-btn").addEventListener("click", async () =>
   }
 });
 
-// ===== Web Push（VAPID）& Service Worker 登録 =====
-async function registerSW() {
-  if (!("serviceWorker" in navigator)) return;
+// ===== iOS ネイティブ Push UI セットアップ =====
+function setupNativePushUI() {
+  var pushBtn = document.getElementById("pushBtn");
+  if (pushBtn) {
+    pushBtn.textContent = "🔔 通知設定を保存";
+    pushBtn.replaceWith(pushBtn.cloneNode(true));
+    var newBtn = document.getElementById("pushBtn");
+    newBtn.addEventListener("click", function() { saveApnsSettings(); });
+  }
+  var pushStatus = document.getElementById("pushStatus");
+  if (pushStatus) {
+    pushStatus.className = "result-text";
+    pushStatus.textContent = "通知をONにして「通知設定を保存」を押してください";
+  }
+}
 
-  const reg = await navigator.serviceWorker.register("sw.js");
-  console.log("SW registered:", reg.scope);
+// ===== iOS APNs 設定保存 =====
+async function saveApnsSettings() {
+  var statusEl = document.getElementById("pushStatus");
+  var onOff = document.querySelector('input[name="pushOnOff"]:checked');
+  if (!onOff) return;
 
-  // Push通知ボタンのイベント設定
-  const pushBtn = document.getElementById("pushBtn");
-  if (!pushBtn) return;
-
-  pushBtn.addEventListener("click", async () => {
-    const statusEl = document.getElementById("pushStatus");
-
+  if (onOff.value === "off") {
+    statusEl.className = "result-text loading";
+    statusEl.textContent = "⏳ 保存中…";
     try {
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        statusEl.className = "result-text error";
-        statusEl.textContent = "❌ 通知の許可が必要です";
-        return;
-      }
-
-      statusEl.className = "result-text loading";
-      statusEl.textContent = "⏳ 登録中…";
-
-      // VAPIDキー取得
-      const vapidRes = await fetch(PUSH_API_BASE + "/api/vapid");
-      const vapidData = await vapidRes.json();
-
-      const swReg = await navigator.serviceWorker.ready;
-      const sub = await swReg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidData.publicKey)
+      await fetch(PUSH_API_BASE + "/apns-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ device_id: DEVICE_ID, hour: null, places: ["off"] })
       });
+      statusEl.className = "result-text success";
+      statusEl.textContent = "✅ 通知をOFFにしました";
+    } catch (e) {
+      statusEl.className = "result-text error";
+      statusEl.textContent = "❌ 保存に失敗しました";
+    }
+    return;
+  }
 
-      // 通知設定値を取得
-      const hourRadio = document.querySelector('input[name="notifyHour"]:checked');
-      const hour = hourRadio ? parseInt(hourRadio.value) : null;
+  var hourRadio = document.querySelector('input[name="notifyHour"]:checked');
+  var hour = hourRadio ? parseInt(hourRadio.value) : 21;
 
-      const isOff = document.getElementById("place_off").checked;
-      const allPlaces = document.getElementById("place_all").checked;
-      let places;
-      if (isOff) {
-        places = ["off"];
-      } else if (allPlaces) {
-        places = [];
-      } else {
-        places = [...document.querySelectorAll(".placeChk:checked")].map(x => x.value);
-      }
+  var modeRadio = document.querySelector('input[name="placeMode"]:checked');
+  var places;
+  if (!modeRadio || modeRadio.value === "all") {
+    places = [];
+  } else {
+    places = [].slice.call(document.querySelectorAll(".placeChk:checked")).map(function(x) { return x.value; });
+    if (places.length === 0) {
+      statusEl.className = "result-text error";
+      statusEl.textContent = "❌ 通知する場所を1つ以上選んでください";
+      return;
+    }
+  }
 
-      // サブスクリプション送信
+  statusEl.className = "result-text loading";
+  statusEl.textContent = "⏳ 保存中…";
+  try {
+    await fetch(PUSH_API_BASE + "/apns-settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ device_id: DEVICE_ID, hour: hour, places: places })
+    });
+    statusEl.className = "result-text success";
+    statusEl.textContent = "✅ 通知の登録が完了しました！";
+  } catch (e) {
+    statusEl.className = "result-text error";
+    statusEl.textContent = "❌ 保存に失敗しました";
+  }
+}
+
+// ===== ブラウザ Web Push 登録 =====
+async function doPushRegister() {
+  var statusEl = document.getElementById("pushStatus");
+  var onOff = document.querySelector('input[name="pushOnOff"]:checked');
+  if (!onOff) return;
+
+  try {
+    var permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      statusEl.className = "result-text error";
+      statusEl.textContent = "❌ 通知の許可が必要です";
+      return;
+    }
+
+    statusEl.className = "result-text loading";
+    statusEl.textContent = "⏳ 登録中…";
+
+    var vapidRes = await fetch(PUSH_API_BASE + "/api/vapid");
+    var vapidData = await vapidRes.json();
+
+    var swReg = await navigator.serviceWorker.ready;
+    var sub = await swReg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidData.publicKey)
+    });
+
+    if (onOff.value === "off") {
       await fetch(PUSH_API_BASE + "/subs/upsert", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subscription: sub.toJSON(),
-          hour: hour,
-          places: places
-        })
+        body: JSON.stringify({ subscription: sub.toJSON(), hour: null, places: ["off"] })
       });
-
-      if (isOff) {
-        statusEl.className = "result-text success";
-        statusEl.textContent = "✅ 通知をOFFにしました";
-      } else {
-        statusEl.className = "result-text success";
-        statusEl.textContent = "✅ 通知の登録が完了しました！";
-      }
-    } catch (e) {
-      console.warn("push registration failed:", e);
-      statusEl.className = "result-text error";
-      statusEl.textContent = "❌ 通知の登録に失敗しました";
+      statusEl.className = "result-text success";
+      statusEl.textContent = "✅ 通知をOFFにしました";
+      return;
     }
-  });
+
+    var hourRadio = document.querySelector('input[name="notifyHour"]:checked');
+    var hour = hourRadio ? parseInt(hourRadio.value) : 21;
+
+    var modeRadio = document.querySelector('input[name="placeMode"]:checked');
+    var places;
+    if (!modeRadio || modeRadio.value === "all") {
+      places = [];
+    } else {
+      places = [].slice.call(document.querySelectorAll(".placeChk:checked")).map(function(x) { return x.value; });
+      if (places.length === 0) {
+        statusEl.className = "result-text error";
+        statusEl.textContent = "❌ 通知する場所を1つ以上選んでください";
+        return;
+      }
+    }
+
+    await fetch(PUSH_API_BASE + "/subs/upsert", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subscription: sub.toJSON(), hour: hour, places: places })
+    });
+
+    statusEl.className = "result-text success";
+    statusEl.textContent = "✅ 通知の登録が完了しました！";
+  } catch (e) {
+    console.warn("push registration failed:", e);
+    statusEl.className = "result-text error";
+    statusEl.textContent = "❌ 通知登録に失敗しました";
+  }
 }
 
+// ===== Web Push（VAPID）& Service Worker 登録 =====
+async function registerSW() {
+  if (!("serviceWorker" in navigator)) return;
+  var reg = await navigator.serviceWorker.register("sw.js");
+  console.log("SW registered:", reg.scope);
+
+  // ネイティブ（iOS WebView / Capacitor）の場合は別関数で処理
+  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.apnsToken) {
+    setupNativePushUI();
+    return;
+  }
+
+  // ブラウザ Web Push
+  var pushBtn = document.getElementById("pushBtn");
+  if (!pushBtn) return;
+  pushBtn.replaceWith(pushBtn.cloneNode(true));
+  var newBtn = document.getElementById("pushBtn");
+  newBtn.addEventListener("click", function() { doPushRegister(); });
+}
+
+// ===== ユーティリティ =====
 function urlBase64ToUint8Array(base64String) {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const padding = "=".repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
@@ -1130,15 +1167,15 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
-// ===== ユーティリティ =====
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return "";
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return dateStr;
-  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function escapeHtml(str) {
-  if (!str) return "";
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  return `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,"0")}/${d.getDate().toString().padStart(2,"0")}`;
 }
