@@ -59,6 +59,100 @@ function switchPage(page) {
   if (pageEl) pageEl.scrollTop = 0;
 }
 
+// ★ サーバーから通知設定を読み込んでUIに反映（追加）
+async function loadPushSettings() {
+  try {
+    // ネイティブ（iOS Capacitor）の場合 → APNs設定をdevice_idで取得
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.apnsToken) {
+      var res = await fetch(PUSH_API_BASE + "/apns-settings?device_id=" + encodeURIComponent(DEVICE_ID));
+      var data = await res.json();
+      if (!data.ok || !data.registered) return;
+
+      if (data.pushOn) {
+        var onRadio = document.querySelector('input[name="pushOnOff"][value="on"]');
+        if (onRadio) onRadio.checked = true;
+      } else {
+        var offRadio = document.querySelector('input[name="pushOnOff"][value="off"]');
+        if (offRadio) offRadio.checked = true;
+      }
+
+      if (data.hour === 18 || data.hour === 21) {
+        var hourRadio = document.querySelector('input[name="notifyHour"][value="' + data.hour + '"]');
+        if (hourRadio) hourRadio.checked = true;
+      }
+
+      var places = data.places || [];
+      var hasOff = places.includes("off");
+      if (!hasOff && places.length > 0) {
+        var customRadio = document.querySelector('input[name="placeMode"][value="custom"]');
+        if (customRadio) customRadio.checked = true;
+        document.querySelectorAll(".placeChk").forEach(function(chk) {
+          chk.checked = places.includes(chk.value);
+        });
+      } else {
+        var allRadio = document.querySelector('input[name="placeMode"][value="all"]');
+        if (allRadio) allRadio.checked = true;
+      }
+
+      var statusEl = document.getElementById("pushStatus");
+      if (statusEl && data.pushOn) {
+        statusEl.className = "result-text success";
+        statusEl.textContent = "✅ 通知ON（サーバーに保存済み）";
+      }
+      return;
+    }
+
+    // ブラウザ Web Push の場合 → endpointで取得
+    if (!("serviceWorker" in navigator)) return;
+    var reg = await navigator.serviceWorker.ready;
+    if (!reg || !reg.pushManager) return;
+    var sub = await reg.pushManager.getSubscription();
+    if (!sub || !sub.endpoint) return;
+
+    var res2 = await fetch(PUSH_API_BASE + "/subs/get", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint: sub.endpoint })
+    });
+    var data2 = await res2.json();
+    if (!data2.ok || !data2.registered) return;
+
+    if (data2.pushOn) {
+      var onRadio2 = document.querySelector('input[name="pushOnOff"][value="on"]');
+      if (onRadio2) onRadio2.checked = true;
+    } else {
+      var offRadio2 = document.querySelector('input[name="pushOnOff"][value="off"]');
+      if (offRadio2) offRadio2.checked = true;
+    }
+
+    if (data2.hour === 18 || data2.hour === 21) {
+      var hourRadio2 = document.querySelector('input[name="notifyHour"][value="' + data2.hour + '"]');
+      if (hourRadio2) hourRadio2.checked = true;
+    }
+
+    var places2 = data2.places || [];
+    var hasOff2 = places2.includes("off");
+    if (!hasOff2 && places2.length > 0) {
+      var customRadio2 = document.querySelector('input[name="placeMode"][value="custom"]');
+      if (customRadio2) customRadio2.checked = true;
+      document.querySelectorAll(".placeChk").forEach(function(chk) {
+        chk.checked = places2.includes(chk.value);
+      });
+    } else {
+      var allRadio2 = document.querySelector('input[name="placeMode"][value="all"]');
+      if (allRadio2) allRadio2.checked = true;
+    }
+
+    var statusEl2 = document.getElementById("pushStatus");
+    if (statusEl2 && data2.pushOn) {
+      statusEl2.className = "result-text success";
+      statusEl2.textContent = "✅ 通知ON（サーバーに保存済み）";
+    }
+  } catch (e) {
+    console.warn("loadPushSettings failed:", e);
+  }
+}
+
 // ===== 初期化 =====
 document.addEventListener("DOMContentLoaded", async () => {
   DEVICE_ID = getDeviceId();
@@ -77,8 +171,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   await checkBirthdayCoupon();
   await loadMyCoupons();
   await loadBirthMonth();
+  await registerSW().catch(() => {});   // ★ await に変更（SW登録完了を待つ）
+  await loadPushSettings();              // ★ 追加（サーバーから設定を復元）
   syncPlaceUI();
-  registerSW().catch(() => {});
 });
 
 // ===== メニュー拡大モーダル =====
