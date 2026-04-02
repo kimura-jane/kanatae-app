@@ -59,7 +59,7 @@ function switchPage(page) {
   if (pageEl) pageEl.scrollTop = 0;
 }
 
-// ★ サーバーから通知設定を読み込んでUIに反映（追加）
+// ★ サーバーから通知設定を読み込んでUIに反映
 async function loadPushSettings() {
   try {
     // ネイティブ（iOS Capacitor）の場合 → APNs設定をdevice_idで取得
@@ -171,8 +171,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   await checkBirthdayCoupon();
   await loadMyCoupons();
   await loadBirthMonth();
-  await registerSW().catch(() => {});   // ★ await に変更（SW登録完了を待つ）
-  await loadPushSettings();              // ★ 追加（サーバーから設定を復元）
+  await registerSW().catch(() => {});
+  await loadPushSettings();
   syncPlaceUI();
 });
 
@@ -990,17 +990,15 @@ document.getElementById("review-submit-btn").addEventListener("click", async () 
   }
 });
 
-// ===== 誕生月登録 =====
+// ===== 誕生月登録 ===== // ★★ 修正: /birth-month → /birthday
 async function loadBirthMonth() {
   try {
-    const res = await fetch(`${API_BASE}/birth-month?device_id=${encodeURIComponent(DEVICE_ID)}`);
+    const res = await fetch(`${API_BASE}/birthday?device_id=${encodeURIComponent(DEVICE_ID)}`);  // ★★ 修正
     const data = await res.json();
     if (data.birth_month) {
       const form = document.getElementById("birth-month-form");
-      form.innerHTML = `<div class="birth-month-locked">
-        <div class="birth-month-display">🎂 ${data.birth_month}月</div>
-        <div class="birth-month-note">登録済み（変更不可）</div>
-      </div>`;
+      form.innerHTML = `<p style="text-align:center;font-size:1.2em;">🎂 ${data.birth_month}月</p>
+        <p style="text-align:center;color:#888;">登録済み（変更不可）</p>`;
     }
   } catch (e) {
     console.warn("load birth month failed:", e);
@@ -1011,12 +1009,16 @@ document.getElementById("birth-month-btn").addEventListener("click", async () =>
   const select = document.getElementById("birth-month-select");
   const month = select.value;
   const resultEl = document.getElementById("birth-month-result");
-  if (!month) { resultEl.className = "result-text error"; resultEl.textContent = "月を選択してください"; return; }
+  if (!month) {
+    resultEl.className = "result-text error";
+    resultEl.textContent = "月を選択してください";
+    return;
+  }
   if (!confirm(`⚠️ ${month}月で登録しますか？\n一度登録すると変更できません。`)) return;
   resultEl.className = "result-text loading";
   resultEl.textContent = "登録中…";
   try {
-    const res = await fetch(`${API_BASE}/birth-month`, {
+    const res = await fetch(`${API_BASE}/birthday`, {  // ★★ 修正
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ device_id: DEVICE_ID, birth_month: parseInt(month) })
@@ -1026,10 +1028,8 @@ document.getElementById("birth-month-btn").addEventListener("click", async () =>
       resultEl.className = "result-text success";
       resultEl.textContent = `✅ ${month}月で登録しました！`;
       const form = document.getElementById("birth-month-form");
-      form.innerHTML = `<div class="birth-month-locked">
-        <div class="birth-month-display">🎂 ${month}月</div>
-        <div class="birth-month-note">登録済み（変更不可）</div>
-      </div>`;
+      form.innerHTML = `<p style="text-align:center;font-size:1.2em;">🎂 ${month}月</p>
+        <p style="text-align:center;color:#888;">登録済み（変更不可）</p>`;
       checkBirthdayCoupon();
     } else {
       resultEl.className = "result-text error";
@@ -1073,139 +1073,113 @@ document.getElementById("share-line-btn").addEventListener("click", () => {
   window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(SHARE_URL)}&text=${text}`, "_blank");
 });
 
+document.getElementById("share-copy-btn").addEventListener("click", () => {
+  navigator.clipboard.writeText(SHARE_URL).then(() => {
+    alert("✅ リンクをコピーしました！");
+  }).catch(() => {
+    alert("コピーに失敗しました");
+  });
+});
+
 // ===== キャッシュクリア =====
-document.getElementById("cache-clear-btn").addEventListener("click", async () => {
-  const resultEl = document.getElementById("cache-clear-result");
+document.getElementById("clear-cache-btn").addEventListener("click", async () => {
+  if (!confirm("キャッシュをクリアしますか？\nアプリが最新の状態に更新されます。")) return;
   try {
     const keys = await caches.keys();
     await Promise.all(keys.map(k => caches.delete(k)));
-    resultEl.className = "result-text success";
-    resultEl.textContent = "✅ キャッシュをクリアしました。リロードします…";
-    setTimeout(() => location.reload(), 1000);
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(r => r.unregister()));
+    }
+    alert("✅ キャッシュをクリアしました。ページを再読み込みします。");
+    location.reload(true);
   } catch (e) {
-    resultEl.className = "result-text error";
-    resultEl.textContent = "❌ キャッシュクリアに失敗しました";
+    alert("❌ キャッシュクリアに失敗しました");
   }
 });
 
-// ===== iOS ネイティブ Push UI セットアップ =====
-function setupNativePushUI() {
-  var pushBtn = document.getElementById("pushBtn");
-  if (pushBtn) {
-    pushBtn.textContent = "🔔 通知設定を保存";
-    pushBtn.replaceWith(pushBtn.cloneNode(true));
-    var newBtn = document.getElementById("pushBtn");
-    newBtn.addEventListener("click", function() { saveApnsSettings(); });
-  }
-  var pushStatus = document.getElementById("pushStatus");
-  if (pushStatus) {
-    pushStatus.className = "result-text";
-    pushStatus.textContent = "通知をONにして「通知設定を保存」を押してください";
-  }
-}
-
-// ===== iOS APNs 設定保存 =====
-async function saveApnsSettings() {
-  var statusEl = document.getElementById("pushStatus");
-  var onOff = document.querySelector('input[name="pushOnOff"]:checked');
-  if (!onOff) return;
-
-  if (onOff.value === "off") {
-    statusEl.className = "result-text loading";
-    statusEl.textContent = "⏳ 保存中…";
-    try {
-      await fetch(PUSH_API_BASE + "/apns-settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ device_id: DEVICE_ID, hour: null, places: ["off"] })
-      });
-      statusEl.className = "result-text success";
-      statusEl.textContent = "✅ 通知をOFFにしました";
-    } catch (e) {
-      statusEl.className = "result-text error";
-      statusEl.textContent = "❌ 保存に失敗しました";
-    }
-    return;
-  }
-
-  var hourRadio = document.querySelector('input[name="notifyHour"]:checked');
-  var hour = hourRadio ? parseInt(hourRadio.value) : 21;
-
-  var modeRadio = document.querySelector('input[name="placeMode"]:checked');
-  var places;
-  if (!modeRadio || modeRadio.value === "all") {
-    places = [];
-  } else {
-    places = [].slice.call(document.querySelectorAll(".placeChk:checked")).map(function(x) { return x.value; });
-    if (places.length === 0) {
-      statusEl.className = "result-text error";
-      statusEl.textContent = "❌ 通知する場所を1つ以上選んでください";
-      return;
-    }
-  }
-
-  statusEl.className = "result-text loading";
-  statusEl.textContent = "⏳ 保存中…";
-  try {
-    await fetch(PUSH_API_BASE + "/apns-settings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ device_id: DEVICE_ID, hour: hour, places: places })
-    });
-    statusEl.className = "result-text success";
-    statusEl.textContent = "✅ 通知の登録が完了しました！";
-  } catch (e) {
-    statusEl.className = "result-text error";
-    statusEl.textContent = "❌ 保存に失敗しました";
-  }
-}
-
-// ===== ブラウザ Web Push 登録 =====
+// ===== Web Push 通知登録 ===== // ★★ 修正: /api/vapid → /vapid
 async function doPushRegister() {
   var statusEl = document.getElementById("pushStatus");
-  var onOff = document.querySelector('input[name="pushOnOff"]:checked');
-  if (!onOff) return;
+  statusEl.className = "result-text loading";
+  statusEl.textContent = "⏳ 通知を登録中…";
 
   try {
+    var pushOnOff = (document.querySelector('input[name="pushOnOff"]:checked') || {}).value || "off";
+
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      statusEl.className = "result-text error";
+      statusEl.textContent = "❌ このブラウザはプッシュ通知に対応していません";
+      return;
+    }
+
+    var reg = await navigator.serviceWorker.ready;
+
+    if (pushOnOff === "off") {
+      // OFF の場合: 既存 subscription があれば places=["off"] で upsert
+      var existingSub = await reg.pushManager.getSubscription();
+      if (existingSub) {
+        var offRes = await fetch(PUSH_API_BASE + "/subs/upsert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            endpoint: existingSub.endpoint,
+            keys: {
+              p256dh: btoa(String.fromCharCode(...new Uint8Array(existingSub.getKey("p256dh")))),
+              auth: btoa(String.fromCharCode(...new Uint8Array(existingSub.getKey("auth"))))
+            },
+            hour: null,
+            places: ["off"]
+          })
+        });
+        var offData = await offRes.json();
+        statusEl.className = offData.ok ? "result-text success" : "result-text error";
+        statusEl.textContent = offData.ok ? "✅ 通知をOFFにしました" : "❌ " + (offData.error || "保存に失敗しました");
+      } else {
+        statusEl.className = "result-text success";
+        statusEl.textContent = "✅ 通知はOFFです";
+      }
+      return;
+    }
+
+    // ON の場合: VAPID 公開鍵を取得して subscribe
+    var vapidRes = await fetch(PUSH_API_BASE + "/vapid");  // ★★ 修正
+    if (!vapidRes.ok) throw new Error("VAPID fetch failed: " + vapidRes.status);
+    var vapidData = await vapidRes.json();
+    var vapidPublicKey = vapidData.publicKey || vapidData.vapidPublicKey;
+    if (!vapidPublicKey) throw new Error("VAPID public key not found");
+
+    // Base64 URL → Uint8Array
+    var rawKey = vapidPublicKey.replace(/-/g, "+").replace(/_/g, "/");
+    var padding = "=".repeat((4 - rawKey.length % 4) % 4);
+    var keyBytes = atob(rawKey + padding);
+    var applicationServerKey = new Uint8Array(keyBytes.length);
+    for (var i = 0; i < keyBytes.length; i++) {
+      applicationServerKey[i] = keyBytes.charCodeAt(i);
+    }
+
     var permission = await Notification.requestPermission();
     if (permission !== "granted") {
       statusEl.className = "result-text error";
-      statusEl.textContent = "❌ 通知の許可が必要です";
+      statusEl.textContent = "❌ 通知の許可が必要です。ブラウザの設定を確認してください。";
       return;
     }
 
-    statusEl.className = "result-text loading";
-    statusEl.textContent = "⏳ 登録中…";
-
-    var vapidRes = await fetch(PUSH_API_BASE + "/api/vapid");
-    var vapidData = await vapidRes.json();
-
-    var swReg = await navigator.serviceWorker.ready;
-    var sub = await swReg.pushManager.subscribe({
+    var subscription = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidData.publicKey)
+      applicationServerKey: applicationServerKey
     });
 
-    if (onOff.value === "off") {
-      await fetch(PUSH_API_BASE + "/subs/upsert", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscription: sub.toJSON(), hour: null, places: ["off"] })
-      });
-      statusEl.className = "result-text success";
-      statusEl.textContent = "✅ 通知をOFFにしました";
-      return;
-    }
+    // 時間・場所設定を収集
+    var hour = document.querySelector('input[name="notifyHour"]:checked');
+    var hourVal = hour ? parseInt(hour.value) : 21;
 
-    var hourRadio = document.querySelector('input[name="notifyHour"]:checked');
-    var hour = hourRadio ? parseInt(hourRadio.value) : 21;
-
-    var modeRadio = document.querySelector('input[name="placeMode"]:checked');
+    var placeMode = (document.querySelector('input[name="placeMode"]:checked') || {}).value || "all";
     var places;
-    if (!modeRadio || modeRadio.value === "all") {
+    if (placeMode === "all") {
       places = [];
     } else {
-      places = [].slice.call(document.querySelectorAll(".placeChk:checked")).map(function(x) { return x.value; });
+      places = [...document.querySelectorAll(".placeChk:checked")].map(function(x) { return x.value; });
       if (places.length === 0) {
         statusEl.className = "result-text error";
         statusEl.textContent = "❌ 通知する場所を1つ以上選んでください";
@@ -1213,55 +1187,52 @@ async function doPushRegister() {
       }
     }
 
-    await fetch(PUSH_API_BASE + "/subs/upsert", {
+    // サーバーに登録
+    var subJson = subscription.toJSON();
+    var upsertRes = await fetch(PUSH_API_BASE + "/subs/upsert", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subscription: sub.toJSON(), hour: hour, places: places })
+      body: JSON.stringify({
+        endpoint: subJson.endpoint,
+        keys: subJson.keys,
+        hour: hourVal,
+        places: places
+      })
     });
+    var upsertData = await upsertRes.json();
 
-    statusEl.className = "result-text success";
-    statusEl.textContent = "✅ 通知の登録が完了しました！";
+    if (upsertData.ok) {
+      statusEl.className = "result-text success";
+      statusEl.textContent = "✅ 通知設定を保存しました！";
+    } else {
+      statusEl.className = "result-text error";
+      statusEl.textContent = "❌ " + (upsertData.error || "登録に失敗しました");
+    }
   } catch (e) {
-    console.warn("push registration failed:", e);
+    console.error("doPushRegister error:", e);
     statusEl.className = "result-text error";
     statusEl.textContent = "❌ 通知登録に失敗しました";
   }
 }
 
-// ===== Web Push（VAPID）& Service Worker 登録 =====
+// pushBtn クリックハンドラ（Web Push 用）
+document.getElementById("pushBtn").addEventListener("click", doPushRegister);
+
+// ===== Service Worker 登録 =====
 async function registerSW() {
   if (!("serviceWorker" in navigator)) return;
-  var reg = await navigator.serviceWorker.register("sw.js");
-  console.log("SW registered:", reg.scope);
-
-  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.apnsToken) {
-    setupNativePushUI();
-    return;
+  try {
+    var reg = await navigator.serviceWorker.register("sw.js");
+    console.log("SW registered:", reg.scope);
+  } catch (e) {
+    console.warn("SW registration failed:", e);
   }
-
-  var pushBtn = document.getElementById("pushBtn");
-  if (!pushBtn) return;
-  pushBtn.replaceWith(pushBtn.cloneNode(true));
-  var newBtn = document.getElementById("pushBtn");
-  newBtn.addEventListener("click", function() { doPushRegister(); });
 }
 
 // ===== ユーティリティ =====
-function urlBase64ToUint8Array(base64String) {
-  const padding = "=".repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
-
-function escapeHtml(text) {
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
+function escapeHtml(str) {
+  if (!str) return "";
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
 function formatDate(dateStr) {
