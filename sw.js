@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kanatake-v13';
+const CACHE_NAME = 'kanatake-v14';
 
 // ===== Utils =====
 function getBasePath() {
@@ -7,7 +7,6 @@ function getBasePath() {
 }
 
 function isCoreAsset(pathname, BASE) {
-  // "アプリの心臓部"は必ずネット優先で取りに行く
   const core = new Set([
     BASE,
     BASE + 'index.html',
@@ -22,7 +21,6 @@ function isCoreAsset(pathname, BASE) {
 }
 
 function isStaticAsset(pathname) {
-  // 画像などはキャッシュ優先でOK
   return (
     pathname.match(/\.(png|jpg|jpeg|webp|svg|ico)$/i) ||
     pathname.match(/\.(woff2?|ttf|otf)$/i)
@@ -41,7 +39,6 @@ async function cachePutSafe(cache, req, res) {
 self.addEventListener('install', (e) => {
   const BASE = getBasePath();
 
-  // ここは"必須級"だけにする（失敗で全体が壊れるのを防ぐ）
   const urlsToCache = [
     BASE,
     BASE + 'index.html',
@@ -63,7 +60,6 @@ self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
 
-    // addAll で1個でも落ちると install 全体が失敗するので、個別に安全に入れる
     await Promise.allSettled(
       urlsToCache.map(async (u) => {
         try {
@@ -97,13 +93,11 @@ self.addEventListener('fetch', (e) => {
   const BASE = getBasePath();
   const pathname = url.pathname;
 
-  // ナビゲーション（ページ遷移）は index.html を返せるように network-first
   const isNav = req.mode === 'navigate';
 
   e.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
 
-    // 1) index や js/css/manifest は network-first（更新ズレで死ぬのを防ぐ）
     if (isNav || isCoreAsset(pathname, BASE)) {
       try {
         const fresh = await fetch(req, { cache: 'no-store' });
@@ -113,7 +107,6 @@ self.addEventListener('fetch', (e) => {
         const cached = await caches.match(req);
         if (cached) return cached;
 
-        // navigate の場合、最後の手段で index.html を返す
         if (isNav) {
           const fallback = await caches.match(BASE + 'index.html');
           if (fallback) return fallback;
@@ -122,7 +115,6 @@ self.addEventListener('fetch', (e) => {
       }
     }
 
-    // 2) 画像などは cache-first
     if (isStaticAsset(pathname)) {
       const cached = await caches.match(req);
       if (cached) return cached;
@@ -132,7 +124,6 @@ self.addEventListener('fetch', (e) => {
       return res;
     }
 
-    // 3) その他はほどほど（cache → network → cache）
     const cached = await caches.match(req);
     if (cached) return cached;
 
