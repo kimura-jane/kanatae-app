@@ -990,10 +990,10 @@ document.getElementById("review-submit-btn").addEventListener("click", async () 
   }
 });
 
-// ===== 誕生月登録 ===== // ★★ 修正: /birth-month → /birthday
+// ===== 誕生月登録 =====
 async function loadBirthMonth() {
   try {
-    const res = await fetch(`${API_BASE}/birthday?device_id=${encodeURIComponent(DEVICE_ID)}`);  // ★★ 修正
+    const res = await fetch(`${API_BASE}/birthday?device_id=${encodeURIComponent(DEVICE_ID)}`);
     const data = await res.json();
     if (data.birth_month) {
       const form = document.getElementById("birth-month-form");
@@ -1018,7 +1018,7 @@ document.getElementById("birth-month-btn").addEventListener("click", async () =>
   resultEl.className = "result-text loading";
   resultEl.textContent = "登録中…";
   try {
-    const res = await fetch(`${API_BASE}/birthday`, {  // ★★ 修正
+    const res = await fetch(`${API_BASE}/birthday`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ device_id: DEVICE_ID, birth_month: parseInt(month) })
@@ -1073,16 +1073,21 @@ document.getElementById("share-line-btn").addEventListener("click", () => {
   window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(SHARE_URL)}&text=${text}`, "_blank");
 });
 
-document.getElementById("share-copy-btn").addEventListener("click", () => {
-  navigator.clipboard.writeText(SHARE_URL).then(() => {
-    alert("✅ リンクをコピーしました！");
-  }).catch(() => {
-    alert("コピーに失敗しました");
+// ★★ 修正: share-copy-btn が index.html に存在しない場合にクラッシュしないようガード
+var shareCopyBtn = document.getElementById("share-copy-btn");
+if (shareCopyBtn) {
+  shareCopyBtn.addEventListener("click", () => {
+    navigator.clipboard.writeText(SHARE_URL).then(() => {
+      alert("✅ リンクをコピーしました！");
+    }).catch(() => {
+      alert("コピーに失敗しました");
+    });
   });
-});
+}
 
 // ===== キャッシュクリア =====
-document.getElementById("clear-cache-btn").addEventListener("click", async () => {
+// ★★ 修正: "clear-cache-btn" → "cache-clear-btn"（index.html の id="cache-clear-btn" に合わせる）
+document.getElementById("cache-clear-btn").addEventListener("click", async () => {
   if (!confirm("キャッシュをクリアしますか？\nアプリが最新の状態に更新されます。")) return;
   try {
     const keys = await caches.keys();
@@ -1098,7 +1103,7 @@ document.getElementById("clear-cache-btn").addEventListener("click", async () =>
   }
 });
 
-// ===== Web Push 通知登録 ===== // ★★ 修正: /api/vapid → /vapid
+// ===== Web Push 通知登録 =====
 async function doPushRegister() {
   var statusEl = document.getElementById("pushStatus");
   statusEl.className = "result-text loading";
@@ -1143,7 +1148,7 @@ async function doPushRegister() {
     }
 
     // ON の場合: VAPID 公開鍵を取得して subscribe
-    var vapidRes = await fetch(PUSH_API_BASE + "/vapid");  // ★★ 修正
+    var vapidRes = await fetch(PUSH_API_BASE + "/vapid");
     if (!vapidRes.ok) throw new Error("VAPID fetch failed: " + vapidRes.status);
     var vapidData = await vapidRes.json();
     var vapidPublicKey = vapidData.publicKey || vapidData.vapidPublicKey;
@@ -1193,6 +1198,7 @@ async function doPushRegister() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        subscription: { endpoint: subJson.endpoint, keys: subJson.keys },
         endpoint: subJson.endpoint,
         keys: subJson.keys,
         hour: hourVal,
