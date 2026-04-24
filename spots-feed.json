@@ -326,5 +326,181 @@
     "time": "",
     "lat": 35.839861,
     "lng": 139.794333
+  },
+  {
+    "date": "2026-05-02",
+    "placeId": "mizumoto_park",
+    "name": "水元公園",
+    "time": "",
+    "lat": 35.788554,
+    "lng": 139.869452
+  },
+  {
+    "date": "2026-05-03",
+    "placeId": "namazunobori_yoshikawa",
+    "name": "鯉のぼり＆なまずのぼり2026（吉川市三輪野江1943-3）",
+    "time": "",
+    "lat": 35.869972,
+    "lng": 139.888348
+  },
+  {
+    "date": "2026-05-05",
+    "placeId": "kashiwanoha_tsite",
+    "name": "柏の葉 T-SITE",
+    "time": "",
+    "lat": 35.8915,
+    "lng": 139.9516
+  },
+  {
+    "date": "2026-05-06",
+    "placeId": "verdy_hockey_oi",
+    "name": "東京ヴェルディホッケー さくらリーグ（大井ホッケー競技場）",
+    "time": "",
+    "lat": 35.592592,
+    "lng": 139.753360
+  },
+  {
+    "date": "2026-05-07",
+    "placeId": "warabi_city_hall_noriben",
+    "name": "蕨市役所（のり弁）",
+    "time": "",
+    "lat": 35.825580,
+    "lng": 139.679560
+  },
+  {
+    "date": "2026-05-09",
+    "placeId": "toneri_park",
+    "name": "舎人公園（足立区舎人公園1丁目1）",
+    "time": "",
+    "lat": 35.798953,
+    "lng": 139.769090
+  },
+  {
+    "date": "2026-05-10",
+    "placeId": "botanical_cafe_kinaco",
+    "name": "Botanical cafe Kinaco（足立区神明2-8-10）",
+    "time": "",
+    "lat": 35.794268,
+    "lng": 139.836442
+  },
+  {
+    "date": "2026-05-12",
+    "placeId": "dynam_togasaki",
+    "name": "ダイナム 三郷市戸ヶ崎3丁目",
+    "time": "",
+    "lat": 35.799011,
+    "lng": 139.867575
+  },
+  {
+    "date": "2026-05-13",
+    "placeId": "seiyu_nyujiin",
+    "name": "聖友乳児院さま（杉並区阿佐谷北3-28-19）（一般販売はありません）",
+    "time": "",
+    "lat": 35.711217,
+    "lng": 139.633293
+  },
+  {
+    "date": "2026-05-14",
+    "placeId": "dokkyo_univ_soka",
+    "name": "獨協大学 草加キャンパス",
+    "time": "",
+    "lat": 35.839861,
+    "lng": 139.794333
+  },
+  {
+    "date": "2026-05-16",
+    "placeId": "nerima_family_matsuri_hikarigaoka",
+    "name": "第27回 練馬ファミリーまつり（都立光が丘公園 けやき広場）",
+    "time": "",
+    "lat": 35.763311,
+    "lng": 139.629043
+  },
+  {
+    "date": "2026-05-17",
+    "placeId": "charie_asaka_granfield",
+    "name": "シャリエ朝霞 グランフィールド",
+    "time": "",
+    "lat": 35.8140,
+    "lng": 139.5878
+  },
+  {
+    "date": "2026-05-19",
+    "placeId": "saitama_urawa_cityhall_noriben",
+    "name": "さいたま市役所 浦和本庁舎（のり弁）",
+    "time": "",
+    "lat": 35.861670,
+    "lng": 139.645280
+  },
+  {
+    "date": "2026-05-20",
+    "placeId": "otemachi_kawabata_food_garden_noriben",
+    "name": "大手町川端フードガーデン 千代田区道（日本橋川沿い）（のり弁）",
+    "time": "",
+    "lat": 35.688422,
+    "lng": 139.765929
+  },
+  {
+    "date": "2026-05-21",
+    "placeId": "dokkyo_univ_soka_noriben",
+    "name": "獨協大学 草加キャンパス（のり弁）",
+    "time": "",
+    "lat": 35.839861,
+    "lng": 139.794333
+  },
+  {
+    "date": "2026-05-23",
+    "placeId": "soka_yoga_fes_cityhall",
+    "name": "第2回 草加ヨガフェス（草加市役所）",
+    "time": "",
+    "lat": 35.825363,
+    "lng": 139.804980
+  },
+  {
+    "date": "2026-05-24",
+    "placeId": "harumi_futo_weekend_marche",
+    "name": "晴海ふ頭公園 ウィークエンドマルシェ",
+    "time": "",
+    "lat": 35.647392,
+    "lng": 139.771711
+  },
+  {
+    "date": "2026-05-26",
+    "placeId": "dynam_togasaki",
+    "name": "ダイナム 三郷市戸ヶ崎3丁目",
+    "time": "",
+    "lat": 35.799011,
+    "lng": 139.867575
+  },
+  {
+    "date": "2026-05-27",
+    "placeId": "otemachi_kawabata_food_garden_noriben",
+    "name": "大手町川端フードガーデン 千代田区道（日本橋川沿い）（のり弁）",
+    "time": "",
+    "lat": 35.688422,
+    "lng": 139.765929
+  },
+  {
+    "date": "2026-05-28",
+    "placeId": "dokkyo_univ_soka",
+    "name": "獨協大学 草加キャンパス",
+    "time": "",
+    "lat": 35.839861,
+    "lng": 139.794333
+  },
+  {
+    "date": "2026-05-30",
+    "placeId": "mizumoto_park",
+    "name": "水元公園",
+    "time": "",
+    "lat": 35.788554,
+    "lng": 139.869452
+  },
+  {
+    "date": "2026-05-31",
+    "placeId": "kashiwanoha_nominoichi",
+    "name": "柏の葉 蚤の市 Vol.6（柏の葉T-SITE）",
+    "time": "",
+    "lat": 35.8915,
+    "lng": 139.9516
   }
 ]
