@@ -28,6 +28,50 @@ function getDeviceId() {
 }
 let DEVICE_ID = getDeviceId();
 
+// ===== 出店データ読み込み（spots-feed.json をマスターとして使用） =====
+// カレンダー用: window.spotsAllByYear（全件・年ごと）
+// マップ用: window.spots（今日以降のみ）
+async function loadSpotsFeed() {
+  try {
+    const res = await fetch("spots-feed.json", { cache: "no-cache" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const feed = await res.json();
+    const dowChars = ["日","月","火","水","木","金","土"];
+
+    // カレンダー用: 年ごと・"6/27(土)" 形式
+    const byYear = {};
+    feed.forEach(item => {
+      if (!item || !item.date) return;
+      const [y, m, d] = item.date.split("-").map(Number);
+      if (!y || !m || !d) return;
+      const dow = dowChars[new Date(y, m - 1, d).getDay()];
+      if (!byYear[y]) byYear[y] = [];
+      byYear[y].push({ ...item, date: `${m}/${d}(${dow})` });
+    });
+    window.spotsAllByYear = byYear;
+
+    // 今日のJST日付を YYYY-MM-DD で組み立て（toISOStringはUTCになるので使わない）
+    const now = new Date();
+    const todayISO = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+
+    // マップ用: 今日以降のみ・"06/27" 形式
+    window.spots = feed
+      .filter(item => item && item.date && item.date >= todayISO)
+      .map(item => {
+        const [y, m, d] = item.date.split("-").map(Number);
+        return {
+          ...item,
+          date: `${String(m).padStart(2,"0")}/${String(d).padStart(2,"0")}`,
+          year: y
+        };
+      });
+  } catch (e) {
+    console.error("loadSpotsFeed failed:", e);
+    window.spots = [];
+    window.spotsAllByYear = {};
+  }
+}
+
 // ===== ページナビ =====
 const navBtns = document.querySelectorAll(".nav-btn");
 const pages = document.querySelectorAll(".page");
@@ -156,6 +200,7 @@ async function loadPushSettings() {
 // ===== 初期化 =====
 document.addEventListener("DOMContentLoaded", async () => {
   DEVICE_ID = getDeviceId();
+  await loadSpotsFeed();
   await registerDevice();
   document.getElementById("device-id-display").textContent = DEVICE_ID;
   initStampGrid();
