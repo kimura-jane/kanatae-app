@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kanatake-v14';
+const CACHE_NAME = 'kanatake-v15';
 
 // ===== Utils =====
 function getBasePath() {
@@ -12,8 +12,7 @@ function isCoreAsset(pathname, BASE) {
     BASE + 'index.html',
     BASE + 'style.css',
     BASE + 'app.js',
-    BASE + 'spots.js',
-    BASE + 'spots-all.js',
+    BASE + 'spots-feed.json',
     BASE + 'manifest.json',
     BASE + 'sw.js',
   ]);
@@ -44,8 +43,7 @@ self.addEventListener('install', (e) => {
     BASE + 'index.html',
     BASE + 'style.css',
     BASE + 'app.js',
-    BASE + 'spots.js',
-    BASE + 'spots-all.js',
+    BASE + 'spots-feed.json',
     BASE + 'manifest.json',
     BASE + 'icon.png',
     BASE + 'onigiriya_kanatake_192.png',
