@@ -1416,7 +1416,7 @@
   {
     "date": "2025-10-26",
     "placeId": "minna_no_egao_misato",
-    "name": "みんなのえがおまつり（三郷インター南公園）",
+    "name": "みんなのえがおまつり(三郷インター南公園)",
     "time": ""
   },
   {
@@ -2473,11 +2473,11 @@
   },
   {
     "date": "2026-05-19",
-    "placeId": "saitama_urawa_cityhall_noriben",
-    "name": "さいたま市役所 浦和本庁舎（のり弁）",
-    "time": "",
-    "lat": 35.86167,
-    "lng": 139.64528
+    "placeId": "saitama_toumou_tandai",
+    "name": "埼玉東萌短期大学",
+    "time": "11:00-14:00",
+    "lat": 35.869881,
+    "lng": 139.780239
   },
   {
     "date": "2026-05-20",
