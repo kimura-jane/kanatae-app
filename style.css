@@ -1083,3 +1083,108 @@ html, body {
   color: #999;
   margin-top: 4px;
 }
+
+/* ===== FiNANCiE応援コミュニティカード ===== */
+.financie-card {
+  background: linear-gradient(135deg, #fffaf0, #fff3d8);
+  border: 2px solid #f5a623;
+}
+
+.financie-lead {
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 8px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.financie-desc {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.7;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.financie-code-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  background: white;
+  border: 2px dashed #f5a623;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.financie-code-label {
+  font-size: 12px;
+  color: #888;
+  font-weight: 700;
+}
+
+.financie-code {
+  font-family: monospace;
+  font-size: 22px;
+  font-weight: 700;
+  color: #d48a00;
+  letter-spacing: 2px;
+  background: #fff9e6;
+  padding: 4px 12px;
+  border-radius: 8px;
+  user-select: all;
+  -webkit-user-select: all;
+}
+
+.financie-copy-btn {
+  padding: 8px 14px;
+  background: #f5a623;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.financie-copy-btn:active {
+  transform: scale(0.95);
+  background: #d48a00;
+}
+
+.financie-bonus {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.7;
+  margin-bottom: 14px;
+  padding: 12px;
+  background: rgba(255,255,255,0.6);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.financie-bonus strong {
+  color: #d48a00;
+  font-size: 14px;
+}
+
+.btn-financie {
+  background: linear-gradient(135deg, #f5a623, #f7c86c);
+  color: white;
+  box-shadow: 0 3px 10px rgba(245,166,35,0.4);
+  font-size: 15px;
+  padding: 14px 20px;
+}
+
+.financie-note {
+  font-size: 11px;
+  color: #999;
+  text-align: center;
+  margin-top: 10px;
+  line-height: 1.5;
+}
