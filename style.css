@@ -26,6 +26,7 @@ html, body {
   background: linear-gradient(135deg, #f5a623, #f7c86c);
   color: white;
   padding: 12px 16px;
+  padding-top: calc(12px + env(safe-area-inset-top));
   text-align: center;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   flex-shrink: 0;
