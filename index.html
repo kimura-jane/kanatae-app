@@ -75,6 +75,22 @@
           <ol class="spot-list" id="spotList"></ol>
         </div>
       </div>
+
+      <!-- ===== FiNANCiE応援コミュニティ ===== -->
+      <div class="section-card financie-card">
+        <h2 class="section-title">💎 FiNANCiE応援コミュニティ</h2>
+        <p class="financie-lead">「おにぎり屋かなたけ」の応援コミュニティに参加しよう！</p>
+        <p class="financie-desc">活動のお知らせ・限定投稿が見られます。定期的にリワード（抽選会）でアプリで使えるクーポンも当たるのでチェックしてね 🎁</p>
+        <div class="financie-code-box">
+          <span class="financie-code-label">🎁 招待コード</span>
+          <span class="financie-code" id="financie-code">ET39M2</span>
+          <button class="financie-copy-btn" id="financie-copy-btn" type="button">📋 コピー</button>
+        </div>
+        <p class="financie-bonus">このコードを使って登録すると <strong>1トークンプレゼント</strong> 🎉<br>さらに運営からも追加でトークンをお渡しするので、ぜひ感想や応援メッセージを書き込んでね 💬</p>
+        <a href="https://financie.jp/users/onigiriyakanatake" target="_blank" rel="noopener" class="btn btn-financie btn-full">💎 FiNANCiEを開く</a>
+        <p class="financie-note">※ブラウザからその場で会員登録できます。アプリは後からのダウンロードでOK！</p>
+        <p id="financie-copy-result" class="result-text"></p>
+      </div>
     </section>
 
     <!-- ===== クーポン ===== -->
@@ -420,6 +436,38 @@
     <button class="menu-modal-close" id="menuModalClose">✕ 閉じる</button>
   </div>
 </div>
+
+<script>
+// FiNANCiE招待コード コピー処理
+(function(){
+  const btn = document.getElementById('financie-copy-btn');
+  const result = document.getElementById('financie-copy-result');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    const code = document.getElementById('financie-code').textContent.trim();
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(code);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = code;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      result.textContent = '✅ 招待コードをコピーしました！';
+      result.className = 'result-text success';
+    } catch (e) {
+      result.textContent = '⚠️ コピーに失敗しました。長押しで選択してください。';
+      result.className = 'result-text error';
+    }
+    setTimeout(() => { result.textContent = ''; result.className = 'result-text'; }, 3000);
+  });
+})();
+</script>
 
 <script src="app.js"></script>
 </body>
