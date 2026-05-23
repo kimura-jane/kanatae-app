@@ -4,10 +4,25 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <title>おにぎり屋かなたけ</title>
-  <meta name="description" content="おにぎり屋かなたけ - 出店スケジュール・クーポン・口コミ">
+  <meta name="description" content="出店スケジュール・クーポン・口コミが見られるおにぎり屋かなたけ公式アプリ">
   <meta name="theme-color" content="#f5a623">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- OGP / SNSシェア用 -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="おにぎり屋かなたけ">
+  <meta property="og:description" content="出店スケジュール・クーポン・口コミが見られるおにぎり屋かなたけ公式アプリ">
+  <meta property="og:url" content="https://kimura-jane.github.io/kanatae-app/">
+  <meta property="og:image" content="https://kimura-jane.github.io/kanatae-app/icon.png">
+  <meta property="og:site_name" content="おにぎり屋かなたけ">
+  <meta property="og:locale" content="ja_JP">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="おにぎり屋かなたけ">
+  <meta name="twitter:description" content="出店スケジュール・クーポン・口コミが見られるおにぎり屋かなたけ公式アプリ">
+  <meta name="twitter:image" content="https://kimura-jane.github.io/kanatae-app/icon.png">
 
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="onigiriya_kanatake_192.png">
@@ -76,18 +91,18 @@
         </div>
       </div>
 
-      <!-- ===== FiNANCiE応援コミュニティ ===== -->
+      <!-- ===== おにぎり屋かなたけ応援コミュニティ ===== -->
       <div class="section-card financie-card">
-        <h2 class="section-title">💎 FiNANCiE応援コミュニティ</h2>
-        <p class="financie-lead">「おにぎり屋かなたけ」の応援コミュニティに参加しよう！</p>
+        <h2 class="section-title">💎 おにぎり屋かなたけ応援コミュニティ</h2>
+        <p class="financie-lead">FiNANCiEというサービス内にある「おにぎり屋かなたけ」を応援するコミュニティに参加しませんか？</p>
         <p class="financie-desc">活動のお知らせ・限定投稿が見られます。定期的にリワード（抽選会）でアプリで使えるクーポンも当たるのでチェックしてね 🎁</p>
         <div class="financie-code-box">
           <span class="financie-code-label">🎁 招待コード</span>
           <span class="financie-code" id="financie-code">ET39M2</span>
           <button class="financie-copy-btn" id="financie-copy-btn" type="button">📋 コピー</button>
         </div>
-        <p class="financie-bonus">このコードを使って登録すると <strong>1トークンプレゼント</strong> 🎉<br>さらに運営からも追加でトークンをお渡しするので、ぜひ感想や応援メッセージを書き込んでね 💬</p>
-        <a href="https://financie.jp/users/onigiriyakanatake" target="_blank" rel="noopener" class="btn btn-financie btn-full">💎 FiNANCiEを開く</a>
+        <p class="financie-bonus">このコードを使って登録すると <strong>1トークンプレゼント</strong> 🎉<br>さらに運営からも追加でトークンをお渡しします。<br>トークンは売買もできますが、参加してくれるだけで嬉しいです！ぜひ感想や応援メッセージを書き込んでね 💬</p>
+        <a href="https://financie.jp/users/onigiriyakanatake" target="_blank" rel="noopener" class="btn btn-financie btn-full">💎 コミュニティを開く</a>
         <p class="financie-note">※ブラウザからその場で会員登録できます。アプリは後からのダウンロードでOK！</p>
         <p id="financie-copy-result" class="result-text"></p>
       </div>
@@ -385,7 +400,7 @@
 
       <div class="section-card">
         <h2 class="section-title">ℹ️ アプリ情報</h2>
-        <p class="app-info-text">おにぎり屋かなたけ v2.0</p>
+        <p class="app-info-text">おにぎり屋かなたけ v1.3.1</p>
         <p class="app-info-text">端末ID: <span id="device-id-display" class="device-id-text"></span></p>
       </div>
     </section>
@@ -438,7 +453,7 @@
 </div>
 
 <script>
-// FiNANCiE招待コード コピー処理
+// 招待コード コピー処理
 (function(){
   const btn = document.getElementById('financie-copy-btn');
   const result = document.getElementById('financie-copy-result');
