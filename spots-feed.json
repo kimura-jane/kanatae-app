@@ -2702,5 +2702,53 @@
     "time": "",
     "lat": 35.869671,
     "lng": 139.779526
+  },
+  {
+    "date": "2026-07-23",
+    "placeId": "dokkyo_univ_soka",
+    "name": "獨協大学 草加キャンパス",
+    "time": "",
+    "lat": 35.839861,
+    "lng": 139.794333
+  },
+  {
+    "date": "2026-07-24",
+    "placeId": "saitama_urawa_cityhall",
+    "name": "さいたま市役所 浦和本庁舎",
+    "time": "",
+    "lat": 35.86167,
+    "lng": 139.64528
+  },
+  {
+    "date": "2026-07-26",
+    "placeId": "mizumoto_park",
+    "name": "水元公園",
+    "time": "",
+    "lat": 35.788554,
+    "lng": 139.869452
+  },
+  {
+    "date": "2026-07-28",
+    "placeId": "dynam_togasaki",
+    "name": "ダイナム 三郷市戸ヶ崎3丁目",
+    "time": "",
+    "lat": 35.799011,
+    "lng": 139.867575
+  },
+  {
+    "date": "2026-07-29",
+    "placeId": "otemachi_kawabata_food_garden_noriben",
+    "name": "大手町川端フードガーデン 千代田区道（日本橋川沿い）（のり弁）",
+    "time": "",
+    "lat": 35.688422,
+    "lng": 139.765929
+  },
+  {
+    "date": "2026-07-30",
+    "placeId": "totetsu_matsuri_ota",
+    "name": "東鉄まつり 大田区（京浜島2-10-2）",
+    "time": "",
+    "lat": 35.570918,
+    "lng": 139.763415
   }
 ]
