@@ -350,13 +350,35 @@ async function loadNotices() {
   }
 }
 
+// ★★★ お知らせ本文レンダリング（X埋め込み維持＋URL自動リンク化） ★★★
 function renderNoticeBody(text) {
   if (!text) return "";
   const escaped = escapeHtml(text);
+
+  // ① まずXツイートURLを検出してプレースホルダに退避（<a>化されないように）
+  const tweetPlaceholders = [];
   const xRegex = /https?:\/\/(x\.com|twitter\.com)\/\w+\/status\/(\d+)[^\s]*/g;
-  return escaped.replace(xRegex, (url) => {
-    return `<div class="notice-embed"><blockquote class="twitter-tweet"><a href="${url}"></a></blockquote></div>`;
+  let step1 = escaped.replace(xRegex, (url) => {
+    const idx = tweetPlaceholders.length;
+    tweetPlaceholders.push(`<div class="notice-embed"><blockquote class="twitter-tweet"><a href="${url}"></a></blockquote></div>`);
+    return `\u0000TWEET${idx}\u0000`;
   });
+
+  // ② それ以外の URL をリンク化（末尾の句読点はリンク対象外）
+  const urlRegex = /(https?:\/\/[^\s<>"']+)/g;
+  let step2 = step1.replace(urlRegex, (url) => {
+    const trailing = url.match(/[。、.,\)\]!?]+$/);
+    let cleanUrl = url;
+    let tail = "";
+    if (trailing) {
+      cleanUrl = url.slice(0, -trailing[0].length);
+      tail = trailing[0];
+    }
+    return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="notice-link">${cleanUrl}</a>${tail}`;
+  });
+
+  // ③ プレースホルダをツイート埋め込みに戻す
+  return step2.replace(/\u0000TWEET(\d+)\u0000/g, (_, i) => tweetPlaceholders[Number(i)]);
 }
 
 function loadTwitterWidget() {
