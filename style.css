@@ -1188,3 +1188,11 @@ html, body {
   margin-top: 10px;
   line-height: 1.5;
 }
+.notice-link {
+  color: #f5a623;
+  text-decoration: underline;
+  word-break: break-all;
+}
+.notice-link:active {
+  opacity: 0.6;
+}
