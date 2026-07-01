@@ -2720,6 +2720,14 @@
     "lng": 139.64528
   },
   {
+    "date": "2026-07-25",
+    "placeId": "sumidagawa_hanabi_shioiri_park",
+    "name": "隅田川花火大会 汐入公園",
+    "time": "",
+    "lat": 35.735556,
+    "lng": 139.807778
+  },
+  {
     "date": "2026-07-26",
     "placeId": "mizumoto_park",
     "name": "水元公園",
@@ -2745,10 +2753,26 @@
   },
   {
     "date": "2026-07-30",
-    "placeId": "totetsu_matsuri_ota",
-    "name": "東鉄まつり 大田区（京浜島2-10-2）",
+    "placeId": "warabi_city_hall_noriben",
+    "name": "蕨市役所（のり弁）",
     "time": "",
-    "lat": 35.570918,
-    "lng": 139.763415
+    "lat": 35.82558,
+    "lng": 139.6795603
+  },
+  {
+    "date": "2026-08-01",
+    "placeId": "shushu_marche_hanahata_park",
+    "name": "しゅしゅまるしぇ 花畑公園 盆踊り（足立区花畑4-39-7）",
+    "time": "",
+    "lat": 35.796,
+    "lng": 139.822
+  },
+  {
+    "date": "2026-08-02",
+    "placeId": "kibaco_kids_water_festa_kiba",
+    "name": "KIBACOキッズ ウォーターフェスタ（都立木場公園）",
+    "time": "",
+    "lat": 35.6725,
+    "lng": 139.8072
   }
 ]
