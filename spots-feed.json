@@ -2713,8 +2713,8 @@
   },
   {
     "date": "2026-07-24",
-    "placeId": "saitama_urawa_cityhall",
-    "name": "さいたま市役所 浦和本庁舎",
+    "placeId": "saitama_urawa_cityhall_noriben",
+    "name": "さいたま市役所 浦和本庁舎（のり弁）",
     "time": "",
     "lat": 35.86167,
     "lng": 139.64528
@@ -2766,5 +2766,141 @@
     "time": "",
     "lat": 35.6725,
     "lng": 139.8072
+  },
+  {
+    "date": "2026-08-04",
+    "placeId": "ks_gobancho_bldg_noriben",
+    "name": "k's五番町ビル（のり弁）",
+    "time": "",
+    "lat": 35.690076,
+    "lng": 139.736535
+  },
+  {
+    "date": "2026-08-05",
+    "placeId": "otemachi_kawabata_food_garden_noriben",
+    "name": "大手町川端フードガーデン 千代田区道（日本橋川沿い）（のり弁）",
+    "time": "",
+    "lat": 35.688422,
+    "lng": 139.765929
+  },
+  {
+    "date": "2026-08-06",
+    "placeId": "hakuten_tbase_noriben",
+    "name": "江東区 HAKUTEN T-BASE（のり弁）",
+    "time": "",
+    "lat": 35.643988,
+    "lng": 139.817049
+  },
+  {
+    "date": "2026-08-08",
+    "placeId": "kashiwanoha_tsite",
+    "name": "柏の葉 T-SITE",
+    "time": "",
+    "lat": 35.89897,
+    "lng": 139.953428
+  },
+  {
+    "date": "2026-08-09",
+    "placeId": "tomo_heart_clinic",
+    "name": "ともハートクリニック（さいたま市中央区本町西4-16-10）",
+    "time": "",
+    "lat": 35.9018,
+    "lng": 139.6167
+  },
+  {
+    "date": "2026-08-11",
+    "placeId": "dynam_togasaki",
+    "name": "ダイナム 三郷市戸ヶ崎3丁目",
+    "time": "",
+    "lat": 35.799011,
+    "lng": 139.867575
+  },
+  {
+    "date": "2026-08-12",
+    "placeId": "otemachi_kawabata_food_garden_noriben",
+    "name": "大手町川端フードガーデン 千代田区道（日本橋川沿い）（のり弁）",
+    "time": "",
+    "lat": 35.688422,
+    "lng": 139.765929
+  },
+  {
+    "date": "2026-08-13",
+    "placeId": "warabi_city_hall_noriben",
+    "name": "蕨市役所（のり弁）",
+    "time": "",
+    "lat": 35.82558,
+    "lng": 139.6795603
+  },
+  {
+    "date": "2026-08-15",
+    "placeId": "mizumoto_park",
+    "name": "水元公園",
+    "time": "",
+    "lat": 35.788554,
+    "lng": 139.869452
+  },
+  {
+    "date": "2026-08-16",
+    "placeId": "michi_no_eki_showa",
+    "name": "道の駅庄和",
+    "time": "",
+    "lat": 35.996804,
+    "lng": 139.79478
+  },
+  {
+    "date": "2026-08-19",
+    "placeId": "otemachi_kawabata_food_garden_noriben",
+    "name": "大手町川端フードガーデン 千代田区道（日本橋川沿い）（のり弁）",
+    "time": "",
+    "lat": 35.688422,
+    "lng": 139.765929
+  },
+  {
+    "date": "2026-08-20",
+    "placeId": "saitama_urawa_cityhall_noriben",
+    "name": "さいたま市役所 浦和本庁舎（のり弁）",
+    "time": "",
+    "lat": 35.86167,
+    "lng": 139.64528
+  },
+  {
+    "date": "2026-08-22",
+    "placeId": "chiisana_mori_adachi_rokugatsu",
+    "name": "小さな森の家 足立区六月2丁目1-17",
+    "time": "",
+    "lat": 35.7871,
+    "lng": 139.8135
+  },
+  {
+    "date": "2026-08-25",
+    "placeId": "dynam_togasaki",
+    "name": "ダイナム 三郷市戸ヶ崎3丁目",
+    "time": "",
+    "lat": 35.799011,
+    "lng": 139.867575
+  },
+  {
+    "date": "2026-08-26",
+    "placeId": "otemachi_kawabata_food_garden_noriben",
+    "name": "大手町川端フードガーデン 千代田区道（日本橋川沿い）（のり弁）",
+    "time": "",
+    "lat": 35.688422,
+    "lng": 139.765929
+  },
+  {
+    "date": "2026-08-27",
+    "placeId": "brands_tower_shibaura_noriben",
+    "name": "ブランズタワー芝浦（港区芝浦2-9-1）（のり弁）",
+    "time": "16:00-20:00",
+    "lat": 35.6485,
+    "lng": 139.753
+  },
+  {
+    "date": "2026-08-29",
+    "placeId": "natsumatsuri_narashino_higashi",
+    "name": "夏祭りイベント（千葉県習志野市東習志野2丁目18番地11号）",
+    "time": "",
+    "lat": 35.6968,
+    "lng": 140.068
   }
 ]
