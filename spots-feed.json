@@ -3052,12 +3052,28 @@
     "lng": 139.794333
   },
   {
+    "date": "2026-09-26",
+    "placeId": "taikan_sumai_park_yoshikawa_minami",
+    "name": "体感すまいパーク吉川美南（吉川市高久822）",
+    "time": "",
+    "lat": 35.84445,
+    "lng": 139.85335
+  },
+  {
     "date": "2026-09-27",
     "placeId": "mizumoto_park",
     "name": "水元公園",
     "time": "",
     "lat": 35.788554,
     "lng": 139.869452
+  },
+  {
+    "date": "2026-09-29",
+    "placeId": "saitama_kenchou_noriben",
+    "name": "埼玉県庁 本庁舎東側（浦和区高砂3-15-1／のり弁）",
+    "time": "",
+    "lat": 35.856944,
+    "lng": 139.648889
   },
   {
     "date": "2026-09-30",
