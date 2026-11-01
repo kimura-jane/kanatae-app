@@ -424,4 +424,184 @@
   {"date":"2026-10-27","placeId":"saitama_urawa_cityhall_noriben","name":"さいたま市役所 浦和区役所（のり弁）","time":"","lat":35.86167,"lng":139.64528},
   {"date":"2026-10-28","placeId":"otemachi_kawabata_food_garden_noriben","name":"大手町川端フードガーデン 千代田区道（日本橋川沿い）（のり弁）","time":"","lat":35.688422,"lng":139.765929},
   {"date":"2026-10-29","placeId":"dokkyo_univ_soka","name":"獨協大学 草加キャンパス","time":"","lat":35.839861,"lng":139.794333}
+  
+  {
+    "date": "2026-11-03",
+    "placeId": "mizumoto_park",
+    "name": "水元公園 ふれあいフェスティバル",
+    "time": "",
+    "lat": 35.788554,
+    "lng": 139.869452
+  },
+  {
+    "date": "2026-11-04",
+    "placeId": "otemachi_kawabata_food_garden_noriben",
+    "name": "大手町川端フードガーデン（のり弁）",
+    "time": "",
+    "lat": 35.688422,
+    "lng": 139.765929
+  },
+  {
+    "date": "2026-11-05",
+    "placeId": "dokkyo_univ_soka_noriben",
+    "name": "獨協大学 草加キャンパス（のり弁）",
+    "time": "",
+    "lat": 35.839861,
+    "lng": 139.794333
+  },
+  {
+    "date": "2026-11-07",
+    "placeId": "takano_elementary_autumn_festival",
+    "name": "秋まつり（鷹野小学校）",
+    "time": ""
+  },
+  {
+    "date": "2026-11-08",
+    "placeId": "en_market_7",
+    "name": "第7回 en market",
+    "time": ""
+  },
+  {
+    "date": "2026-11-10",
+    "placeId": "ks_gobancho_building",
+    "name": "k's 五番町ビル",
+    "time": "11:00-13:30"
+  },
+  {
+    "date": "2026-11-11",
+    "placeId": "otemachi_kawabata_food_garden_noriben",
+    "name": "大手町川端フードガーデン（のり弁）",
+    "time": "",
+    "lat": 35.688422,
+    "lng": 139.765929
+  },
+  {
+    "date": "2026-11-12",
+    "placeId": "dokkyo_univ_soka_noriben",
+    "name": "獨協大学 草加キャンパス（のり弁）",
+    "time": "",
+    "lat": 35.839861,
+    "lng": 139.794333
+  },
+  {
+    "date": "2026-11-14",
+    "placeId": "matsubaradanchi_memorial_park",
+    "name": "第4回スポーツパーク（松原団地記念公園）",
+    "time": ""
+  },
+  {
+    "date": "2026-11-15",
+    "placeId": "okudoor_opening_event",
+    "name": "OkuDoor オープニングイベント（葛飾区奥戸1-23-1）",
+    "time": ""
+  },
+  {
+    "date": "2026-11-17",
+    "placeId": "togasaki_3chome",
+    "name": "戸ヶ崎3丁目",
+    "time": "11:00-13:30"
+  },
+  {
+    "date": "2026-11-18",
+    "placeId": "otemachi_kawabata_food_garden_noriben",
+    "name": "大手町川端フードガーデン（のり弁）",
+    "time": "",
+    "lat": 35.688422,
+    "lng": 139.765929
+  },
+  {
+    "date": "2026-11-19",
+    "placeId": "dokkyo_univ_soka_noriben",
+    "name": "獨協大学 草加キャンパス（のり弁）",
+    "time": "",
+    "lat": 35.839861,
+    "lng": 139.794333
+  },
+  {
+    "date": "2026-11-20",
+    "placeId": "saitama_kenchou_noriben",
+    "name": "埼玉県庁 本庁舎（浦和区高砂3-15-1／のり弁）",
+    "time": "",
+    "lat": 35.856944,
+    "lng": 139.648889
+  },
+  {
+    "date": "2026-11-22",
+    "placeId": "niodori_park_kodomo_festival",
+    "name": "みさとこどもまつり（におどり公園）",
+    "time": ""
+  },
+  {
+    "date": "2026-11-23",
+    "placeId": "mizumoto_park",
+    "name": "水元公園",
+    "time": "11:00-15:00",
+    "lat": 35.788554,
+    "lng": 139.869452
+  },
+  {
+    "date": "2026-11-25",
+    "placeId": "otemachi_kawabata_food_garden_noriben",
+    "name": "大手町川端フードガーデン（のり弁）",
+    "time": "",
+    "lat": 35.688422,
+    "lng": 139.765929
+  },
+  {
+    "date": "2026-11-26",
+    "placeId": "warabi_city_hall_noriben",
+    "name": "蕨市役所（のり弁）",
+    "time": "11:00-13:30",
+    "lat": 35.82558,
+    "lng": 139.6795603
+  },
+  {
+    "date": "2026-11-28",
+    "placeId": "family_festa_kawamura_kindergarten",
+    "name": "ふぁみりーふぇすた（川村学園女子大学附属保育園）",
+    "time": ""
+  },
+  {
+    "date": "2026-11-29",
+    "placeId": "akebono_park_soccer_festival",
+    "name": "サッカーフェスティバル（あけぼの公園）",
+    "time": ""
+  },
+  {
+    "date": "2026-12-01",
+    "placeId": "saitama_kenchou_noriben",
+    "name": "埼玉県庁 本庁舎（浦和区高砂3-15-1／のり弁）",
+    "time": "",
+    "lat": 35.856944,
+    "lng": 139.648889
+  },
+  {
+    "date": "2026-12-02",
+    "placeId": "otemachi_kawabata_food_garden_noriben",
+    "name": "大手町川端フードガーデン（のり弁）",
+    "time": "",
+    "lat": 35.688422,
+    "lng": 139.765929
+  },
+  {
+    "date": "2026-12-03",
+    "placeId": "dokkyo_univ_soka_noriben",
+    "name": "獨協大学 草加キャンパス（のり弁）",
+    "time": "",
+    "lat": 35.839861,
+    "lng": 139.794333
+  },
+  {
+    "date": "2026-12-05",
+    "placeId": "harumi_futo_park_dog_picnic",
+    "name": "第5回晴海ふ頭公園わんわんピクニック",
+    "time": ""
+  },
+  {
+    "date": "2026-12-06",
+    "placeId": "shushumarche_christmas_2026",
+    "name": "第29回しゅしゅまるしぇ Christmas Market 2026（ノエル市）",
+    "time": ""
+  }
+
 ]
