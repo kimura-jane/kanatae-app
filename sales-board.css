@@ -1,0 +1,29 @@
+
+/*
+ * 本日の販売状況
+ * iPhone / Android / PWA 共通
+ */
+
+#sales-board-section {
+  display: none;
+  text-align: center;
+}
+
+#sales-board-section h2 {
+  text-align: left;
+}
+
+#sales-board-section img {
+  display: block;
+  width: 100%;
+  max-width: 350px;
+  height: auto;
+  margin: 8px auto;
+  border-radius: 8px;
+}
+
+#sales-board-section .sales-updated {
+  font-size: 12px;
+  color: #777;
+  margin: 6px 0;
+}
