@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -37,6 +38,7 @@
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
 
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="sales-board.css">
 </head>
 <body>
 
@@ -53,6 +55,14 @@
 
     <!-- ===== ホーム ===== -->
     <section class="page active" id="page-home">
+
+      <!-- 本日の販売状況 -->
+      <div class="section-card" id="sales-board-section">
+        <h2 class="section-title">🍙 本日のメニュー</h2>
+        <img id="sales-board-image" alt="本日の販売状況">
+        <p class="sales-updated" id="sales-board-updated"></p>
+      </div>
+
       <div class="section-card" id="notices-area">
         <h2 class="section-title">📢 お知らせ</h2>
         <div id="notices-list" class="notices-list">
@@ -485,5 +495,7 @@
 </script>
 
 <script src="app.js"></script>
+<script src="sales-config.js"></script>
+<script src="sales-board.js"></script>
 </body>
 </html>
