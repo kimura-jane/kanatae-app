@@ -1,4 +1,5 @@
-const CACHE_NAME = 'kanatake-v15';
+
+const CACHE_NAME = 'kanatake-v16';
 
 // ===== Utils =====
 function getBasePath() {
@@ -15,6 +16,9 @@ function isCoreAsset(pathname, BASE) {
     BASE + 'spots-feed.json',
     BASE + 'manifest.json',
     BASE + 'sw.js',
+    BASE + 'sales-board.js',
+    BASE + 'sales-board.css',
+    BASE + 'sales-config.js',
   ]);
   return core.has(pathname);
 }
@@ -43,6 +47,9 @@ self.addEventListener('install', (e) => {
     BASE + 'index.html',
     BASE + 'style.css',
     BASE + 'app.js',
+    BASE + 'sales-board.js',
+    BASE + 'sales-board.css',
+    BASE + 'sales-config.js',
     BASE + 'spots-feed.json',
     BASE + 'manifest.json',
     BASE + 'icon.png',
@@ -63,7 +70,7 @@ self.addEventListener('install', (e) => {
         try {
           await cache.add(u);
         } catch {
-          // 取れないものがあってもSW自体は生かす
+          // 取れないものがあっても落とさない
         }
       })
     );
@@ -76,7 +83,13 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : Promise.resolve())));
+    await Promise.all(
+      keys.map((k) =>
+        k !== CACHE_NAME
+          ? caches.delete(k)
+          : Promise.resolve()
+      )
+    );
     await self.clients.claim();
   })());
 });
@@ -86,47 +99,86 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   const url = new URL(req.url);
 
-  if (req.method !== 'GET' || url.origin !== self.location.origin) return;
+  if (
+    req.method !== 'GET' ||
+    url.origin !== self.location.origin
+  ) {
+    return;
+  }
 
   const BASE = getBasePath();
   const pathname = url.pathname;
-
   const isNav = req.mode === 'navigate';
 
   e.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
 
+    // HTMLと主要JS・CSSはネットワーク優先
     if (isNav || isCoreAsset(pathname, BASE)) {
       try {
-        const fresh = await fetch(req, { cache: 'no-store' });
-        if (fresh && fresh.ok) await cachePutSafe(cache, req, fresh.clone());
+        const fresh = await fetch(req, {
+          cache: 'no-store'
+        });
+
+        if (fresh && fresh.ok) {
+          await cachePutSafe(
+            cache,
+            req,
+            fresh.clone()
+          );
+        }
+
         return fresh;
       } catch {
         const cached = await caches.match(req);
+
         if (cached) return cached;
 
         if (isNav) {
-          const fallback = await caches.match(BASE + 'index.html');
+          const fallback = await caches.match(
+            BASE + 'index.html'
+          );
+
           if (fallback) return fallback;
         }
+
         throw new Error('offline and no cache');
       }
     }
 
+    // 静的画像などはキャッシュ優先
     if (isStaticAsset(pathname)) {
       const cached = await caches.match(req);
+
       if (cached) return cached;
 
       const res = await fetch(req);
-      if (res && res.ok) await cachePutSafe(cache, req, res.clone());
+
+      if (res && res.ok) {
+        await cachePutSafe(
+          cache,
+          req,
+          res.clone()
+        );
+      }
+
       return res;
     }
 
     const cached = await caches.match(req);
+
     if (cached) return cached;
 
     const res = await fetch(req);
-    if (res && res.ok) await cachePutSafe(cache, req, res.clone());
+
+    if (res && res.ok) {
+      await cachePutSafe(
+        cache,
+        req,
+        res.clone()
+      );
+    }
+
     return res;
   })());
 });
@@ -134,10 +186,13 @@ self.addEventListener('fetch', (e) => {
 // ===== Push通知 =====
 self.addEventListener('push', (event) => {
   let data = {};
+
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { body: event.data ? event.data.text() : '' };
+    data = {
+      body: event.data ? event.data.text() : ''
+    };
   }
 
   const BASE = getBasePath();
@@ -145,9 +200,13 @@ self.addEventListener('push', (event) => {
   const body = data.body || '明日の出店のお知らせです';
 
   let targetUrl = data.url || BASE;
+
   if (targetUrl === '/' || targetUrl === '') {
     targetUrl = BASE;
-  } else if (!targetUrl.startsWith('http') && !targetUrl.startsWith(BASE)) {
+  } else if (
+    !targetUrl.startsWith('http') &&
+    !targetUrl.startsWith(BASE)
+  ) {
     targetUrl = BASE + targetUrl.replace(/^\//, '');
   }
 
@@ -155,22 +214,44 @@ self.addEventListener('push', (event) => {
     body,
     icon: BASE + 'onigiriya_kanatake_192.png',
     badge: BASE + 'onigiriya_kanatake_192.png',
-    data: { url: targetUrl }
+    data: {
+      url: targetUrl
+    }
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+
   const BASE = getBasePath();
-  const url = (event.notification.data && event.notification.data.url) ? event.notification.data.url : BASE;
+
+  const url =
+    (event.notification.data &&
+      event.notification.data.url)
+      ? event.notification.data.url
+      : BASE;
 
   event.waitUntil((async () => {
-    const allClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const allClients = await clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true
+    });
+
     for (const c of allClients) {
-      if (c.url.includes(BASE) && 'focus' in c) return c.focus();
+      if (
+        c.url.includes(BASE) &&
+        'focus' in c
+      ) {
+        return c.focus();
+      }
     }
-    if (clients.openWindow) return clients.openWindow(url);
+
+    if (clients.openWindow) {
+      return clients.openWindow(url);
+    }
   })());
 });
