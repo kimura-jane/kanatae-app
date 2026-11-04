@@ -3,12 +3,13 @@
  * おにぎり屋かなたけ
  * 本日の販売状況・公開画像表示
  *
- * 対応:
- * - iPhone Safari
- * - Android Chrome
- * - PWA
+ * Android / iOS / Web / PWA 共通
  *
- * 公開APIのみ利用。管理者認証不要。
+ * ・30秒ごとに最新画像を確認
+ * ・日本時間22時以降は非表示
+ * ・前日以前の画像は表示しない
+ * ・翌日の新しい画像のみ表示
+ * ・アプリ復帰時に再確認
  */
 (function () {
   'use strict';
@@ -36,11 +37,33 @@
   let currentUrl = '';
   let sequence = 0;
 
-  // 日本時間22:00以降は表示しない
-  function afterJstClosingTime() {
+  // 日本時間の日時を取得
+  function jstNow() {
     return new Date(
       Date.now() + 9 * 3600000
-    ).getUTCHours() >= 22;
+    );
+  }
+
+  // 日本時間 YYYY-MM-DD
+  function getJstDay() {
+    const d = jstNow();
+
+    const year = d.getUTCFullYear();
+
+    const month = String(
+      d.getUTCMonth() + 1
+    ).padStart(2, '0');
+
+    const day = String(
+      d.getUTCDate()
+    ).padStart(2, '0');
+
+    return year + '-' + month + '-' + day;
+  }
+
+  // 22:00以降は表示しない
+  function afterJstClosingTime() {
+    return jstNow().getUTCHours() >= 22;
   }
 
   function hideBoard() {
@@ -48,6 +71,32 @@
     currentUrl = '';
   }
 
+  // 当日の公開画像かを判定
+  function isValidBoard(data) {
+    if (!data) {
+      return false;
+    }
+
+    if (afterJstClosingTime()) {
+      return false;
+    }
+
+    if (
+      data.active !== true ||
+      !data.board_url
+    ) {
+      return false;
+    }
+
+    // 前日以前の画像は表示しない
+    if (data.day !== getJstDay()) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // 更新時刻
   function updateCaption(value) {
     if (!value) {
       caption.textContent = '';
@@ -70,15 +119,19 @@
       }
     );
 
-    caption.textContent = '更新：' + formatted;
+    caption.textContent =
+      '更新：' + formatted;
   }
 
+  // 販売状況の再取得
   async function refresh() {
+    const ticket = ++sequence;
+
+    // 22時以降は取得せず非表示
     if (afterJstClosingTime()) {
       hideBoard();
+      return;
     }
-
-    const ticket = ++sequence;
 
     try {
       const response = await fetch(
@@ -90,50 +143,50 @@
 
       if (!response.ok) {
         throw new Error(
-          '販売状況APIの取得に失敗しました'
+          '販売状況の取得に失敗しました'
         );
       }
 
       const data = await response.json();
 
-      if (
-        ticket !== sequence ||
-        afterJstClosingTime()
-      ) {
+      if (ticket !== sequence) {
         return;
       }
 
-      if (
-        !data.active ||
-        !data.board_url
-      ) {
+      // 非公開・前日・22時以降
+      if (!isValidBoard(data)) {
         hideBoard();
         return;
       }
 
-      // 同じ画像なら再ダウンロードしない
+      // 同じ画像なら再読み込みしない
       if (data.board_url === currentUrl) {
         card.style.display = 'block';
         return;
       }
 
-      // 新しい画像が読み込まれるまで非表示
+      // 新しい画像を先に読み込む
       card.style.display = 'none';
 
       const next = new Image();
 
       next.onload = function () {
-        if (
-          ticket !== sequence ||
-          afterJstClosingTime()
-        ) {
+        if (ticket !== sequence) {
+          return;
+        }
+
+        // 読み込み中の日付変更にも対応
+        if (!isValidBoard(data)) {
+          hideBoard();
           return;
         }
 
         image.src = data.board_url;
         currentUrl = data.board_url;
 
-        updateCaption(data.updated_at);
+        updateCaption(
+          data.updated_at
+        );
 
         card.style.display = 'block';
       };
@@ -153,11 +206,9 @@
     }
   }
 
-  // 22時になったら画面を非表示
+  // 毎日22:00に非表示
   function scheduleJstClose() {
-    const shifted = new Date(
-      Date.now() + 9 * 3600000
-    );
+    const shifted = jstNow();
 
     const millisecondsToday = (
       (
@@ -165,10 +216,12 @@
         shifted.getUTCMinutes()
       ) * 60 +
       shifted.getUTCSeconds()
-    ) * 1000 + shifted.getUTCMilliseconds();
+    ) * 1000 +
+    shifted.getUTCMilliseconds();
 
     let delay =
-      22 * 3600000 - millisecondsToday;
+      22 * 3600000 -
+      millisecondsToday;
 
     if (delay <= 0) {
       delay += 24 * 3600000;
@@ -177,20 +230,25 @@
     setTimeout(function () {
       hideBoard();
       ++sequence;
+
       refresh();
       scheduleJstClose();
     }, delay);
   }
 
+  // 22時の非表示タイマー
   scheduleJstClose();
 
-  // 初回取得
+  // 初回表示
   refresh();
 
-  // 30秒ごとの再取得
-  setInterval(refresh, 30000);
+  // 30秒ごとの確認
+  setInterval(
+    refresh,
+    30000
+  );
 
-  // アプリ復帰・タブ再表示
+  // 画面復帰時の確認
   document.addEventListener(
     'visibilitychange',
     function () {
