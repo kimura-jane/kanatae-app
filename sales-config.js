@@ -265,10 +265,6 @@ window.KANATAKE_SALES_API_BASE =
       font-family: var(--kanatake-hand-font); font-size: 20px; font-weight: 700;
       color: var(--kt-accent, #79451f);
     }
-    .kanatake-friendly .kt-appearance .kt-preview-body {
-      font-family: var(--kanatake-body-font); font-size: 13px; margin-top: 6px;
-    }
-    .kanatake-friendly .kt-appearance .kt-status { font-size: 12px; margin: 8px 0 0; }
     body.kanatake-friendly[data-kanatake-color]:not([data-kanatake-color="orange"]) .header {
       background: var(--kt-light); border-bottom-color: var(--kt-line);
     }
@@ -355,9 +351,9 @@ window.KANATAKE_SALES_API_BASE =
     <div class="settings-card">
       <p class="settings-card-title">フォント</p>
       <fieldset class="kt-font-list" aria-label="フォントの種類">
-        <label class="kt-font-option"><input type="radio" name="kt-font" value="original">丸ゴシック（標準）</label>
+        <label class="kt-font-option"><input type="radio" name="kt-font" value="original">丸ゴシック</label>
         <label class="kt-font-option"><input type="radio" name="kt-font" value="hand">手書き風</label>
-        <label class="kt-font-option"><input type="radio" name="kt-font" value="simple">すっきりした標準文字</label>
+        <label class="kt-font-option"><input type="radio" name="kt-font" value="simple">スタイリッシュ</label>
       </fieldset>
       <p class="settings-card-title">テーマカラー</p>
       <div class="kt-colors" role="group" aria-label="テーマカラー">
@@ -368,10 +364,7 @@ window.KANATAKE_SALES_API_BASE =
       </div>
       <div class="kt-preview" aria-label="選択した文字と色の見本">
         <div class="kt-preview-title">おにぎりでえがお</div>
-        <div class="kt-preview-body">今日もおいしいおにぎりを！</div>
       </div>
-      <p class="settings-desc">この端末だけに保存されます。ホーム画面のアプリアイコンは変わりません。</p>
-      <p class="kt-status" id="kt-appearance-status" role="status" aria-live="polite"></p>
     </div>
   `;
   settings.insertBefore(panel, settings.firstChild);
@@ -383,7 +376,7 @@ window.KANATAKE_SALES_API_BASE =
     input.addEventListener('change', function () {
       if (!input.checked) return;
       applyFont(input.value);
-      setStatus(savePreference(FONT_KEY, input.value));
+      savePreference(FONT_KEY, input.value);
     });
   });
   colorInputs.forEach(function (input) {
@@ -391,16 +384,7 @@ window.KANATAKE_SALES_API_BASE =
     input.addEventListener('change', function () {
       if (!input.checked) return;
       applyColor(input.value);
-      setStatus(savePreference(COLOR_KEY, input.value));
+      savePreference(COLOR_KEY, input.value);
     });
   });
-
-  function setStatus(saved) {
-    var status = document.getElementById('kt-appearance-status');
-    if (status) {
-      status.textContent = saved
-        ? 'この端末に保存しました'
-        : '保存できませんでした。次回起動時に元へ戻る場合があります。';
-    }
-  }
 })();
