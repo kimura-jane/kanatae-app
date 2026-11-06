@@ -1,10 +1,12 @@
 
-const CACHE_NAME = 'kanatake-v16';
+const CACHE_NAME = 'kanatake-v17';
 
 // ===== Utils =====
 function getBasePath() {
   const scopeUrl = new URL(self.registration.scope);
-  return scopeUrl.pathname.endsWith('/') ? scopeUrl.pathname : scopeUrl.pathname + '/';
+  return scopeUrl.pathname.endsWith('/')
+    ? scopeUrl.pathname
+    : scopeUrl.pathname + '/';
 }
 
 function isCoreAsset(pathname, BASE) {
@@ -12,6 +14,7 @@ function isCoreAsset(pathname, BASE) {
     BASE,
     BASE + 'index.html',
     BASE + 'style.css',
+    BASE + 'kanatake-theme.css',
     BASE + 'app.js',
     BASE + 'spots-feed.json',
     BASE + 'manifest.json',
@@ -20,6 +23,7 @@ function isCoreAsset(pathname, BASE) {
     BASE + 'sales-board.css',
     BASE + 'sales-config.js',
   ]);
+
   return core.has(pathname);
 }
 
@@ -46,6 +50,7 @@ self.addEventListener('install', (e) => {
     BASE,
     BASE + 'index.html',
     BASE + 'style.css',
+    BASE + 'kanatake-theme.css?v=3',
     BASE + 'app.js',
     BASE + 'sales-board.js',
     BASE + 'sales-board.css',
@@ -83,6 +88,7 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil((async () => {
     const keys = await caches.keys();
+
     await Promise.all(
       keys.map((k) =>
         k !== CACHE_NAME
@@ -90,6 +96,7 @@ self.addEventListener('activate', (e) => {
           : Promise.resolve()
       )
     );
+
     await self.clients.claim();
   })());
 });
