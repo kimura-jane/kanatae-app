@@ -54,6 +54,13 @@ window.KANATAKE_SALES_API_BASE =
   // お客様用アプリ
   document.body.classList.add('kanatake-friendly');
 
+  // 丸ゴシック以外の2種類は専用の日本語フォントを利用する。
+  var additionalFonts = document.createElement('link');
+  additionalFonts.rel = 'stylesheet';
+  additionalFonts.href =
+    'https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@400;500;700&display=swap';
+  document.head.appendChild(additionalFonts);
+
   var headerLogo = document.querySelector('.header-icon');
   if (headerLogo) {
     headerLogo.src = mascotUrl;
@@ -117,18 +124,18 @@ window.KANATAKE_SALES_API_BASE =
   document.head.appendChild(reviewStyle);
 
   // ===== 外観カスタマイズ =====
-  // 保存先は各端末のlocalStorage。サーバーやアカウントには保存しない。
+  // 設定は端末内に保存する。
   var FONT_KEY = 'kanatake_font_v1';
   var COLOR_KEY = 'kanatake_color_v1';
 
   var fonts = {
-    original: null,
-    hand: "'Yomogi', 'Zen Maru Gothic', sans-serif",
-    simple: "-apple-system, BlinkMacSystemFont, 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif"
+    original: "'Zen Maru Gothic', 'Kosugi Maru', 'Hiragino Maru Gothic ProN', sans-serif",
+    serif: "'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', serif",
+    simple: "'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif"
   };
 
   var colors = {
-    orange: null, // 標準の「おにぎりでえがお」配色をそのまま維持
+    orange: null,
     green: {
       accent: '#47672d', button: '#c5daa9', light: '#eaf4de',
       paper: '#f5faef', white: '#fcfff8', line: '#c4d7ad'
@@ -163,14 +170,10 @@ window.KANATAKE_SALES_API_BASE =
   }
 
   function applyFont(name) {
+    var selectedFont = fonts[name] || fonts.original;
     document.body.dataset.kanatakeFont = name;
-    if (name === 'original') {
-      document.body.style.removeProperty('--kanatake-body-font');
-      document.body.style.removeProperty('--kanatake-hand-font');
-    } else {
-      document.body.style.setProperty('--kanatake-body-font', fonts[name]);
-      document.body.style.setProperty('--kanatake-hand-font', fonts[name]);
-    }
+    document.body.style.setProperty('--kanatake-body-font', selectedFont);
+    document.body.style.setProperty('--kanatake-hand-font', selectedFont);
   }
 
   var colorVariables = [
@@ -352,7 +355,7 @@ window.KANATAKE_SALES_API_BASE =
       <p class="settings-card-title">フォント</p>
       <fieldset class="kt-font-list" aria-label="フォントの種類">
         <label class="kt-font-option"><input type="radio" name="kt-font" value="original">丸ゴシック</label>
-        <label class="kt-font-option"><input type="radio" name="kt-font" value="hand">手書き風</label>
+        <label class="kt-font-option"><input type="radio" name="kt-font" value="serif">明朝体</label>
         <label class="kt-font-option"><input type="radio" name="kt-font" value="simple">スタイリッシュ</label>
       </fieldset>
       <p class="settings-card-title">テーマカラー</p>
@@ -371,6 +374,7 @@ window.KANATAKE_SALES_API_BASE =
 
   var fontInputs = panel.querySelectorAll('input[name="kt-font"]');
   var colorInputs = panel.querySelectorAll('input[name="kt-color"]');
+
   fontInputs.forEach(function (input) {
     input.checked = input.value === fontName;
     input.addEventListener('change', function () {
@@ -379,6 +383,7 @@ window.KANATAKE_SALES_API_BASE =
       savePreference(FONT_KEY, input.value);
     });
   });
+
   colorInputs.forEach(function (input) {
     input.checked = input.value === colorName;
     input.addEventListener('change', function () {
