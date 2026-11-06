@@ -1,4 +1,5 @@
-// ===== 設定 =====
+
+/* ===== 設定 ===== */
 const API_BASE = "https://kanatake-api.la-kofu.workers.dev";
 const PUSH_API_BASE = "https://kanatae-push.la-kofu.workers.dev";
 const ASSETS_BASE = "";
@@ -1031,7 +1032,6 @@ document.getElementById("review-submit-btn").addEventListener("click", async () 
   if (!nickname) { resultEl.className = "result-text error"; resultEl.textContent = "ニックネームを入力してください"; return; }
   if (!body) { resultEl.className = "result-text error"; resultEl.textContent = "口コミを入力してください"; return; }
   if (nickname.length > 50) { resultEl.className = "result-text error"; resultEl.textContent = "ニックネームは50文字以内で入力してください"; return; }
-  if (body.length > 600) { resultEl.className = "result-text error"; resultEl.textContent = "口コミは600文字以内で入力してください"; return; }
   resultEl.className = "result-text loading";
   resultEl.textContent = "投稿中…";
   try {
