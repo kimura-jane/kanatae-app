@@ -227,7 +227,7 @@
             </button>
           </div>
           <p class="choice-hint" id="birthday-choice-hint">↑ どれか1つを選んでタップしてね</p>
-          <button class="btn btn-primary btn-full" id="birthday-confirm-btn" style="display:none;">この特典をもらう</button>
+          <button class="btn btn-primary" id="birthday-confirm-btn" style="display:none;">この特典をもらう</button>
         </div>
         <div id="birthday-coupon-used" style="display:none;">
           <div class="coupon-used-badge">✅ 今年の誕生日クーポンは使用済みです</div>
@@ -282,8 +282,8 @@
         <h2 class="section-title">✏️ 口コミを投稿</h2>
         <div class="review-form">
           <input type="text" id="review-nickname" class="input-field" placeholder="ニックネーム（50文字以内）" maxlength="50">
-          <textarea id="review-body" class="input-field textarea-field" placeholder="口コミを書いてね（600文字以内）" maxlength="600"></textarea>
-          <div class="review-char-count"><span id="review-char-current">0</span> / 600</div>
+          <textarea id="review-body" class="input-field textarea-field" placeholder="口コミを書いてね"></textarea>
+          <div class="review-char-count"><span id="review-char-current">0</span>文字</div>
           <button class="btn btn-primary" id="review-submit-btn">投稿する</button>
           <p id="review-result" class="result-text"></p>
         </div>
@@ -297,11 +297,11 @@
       <div class="section-card" id="push-section">
         <h2 class="section-title">🔔 出店通知</h2>
         <label class="settings-option">
-          <input type="radio" name="pushOnOff" value="off" checked>
+          <input type="radio" id="push_off" name="pushOnOff" value="off" checked>
           <span class="settings-option-text">OFF（通知しない）</span>
         </label>
         <label class="settings-option">
-          <input type="radio" name="pushOnOff" value="on">
+          <input type="radio" id="push_on" name="pushOnOff" value="on">
           <span class="settings-option-text">ON（通知する）</span>
         </label>
 
@@ -321,11 +321,11 @@
           <div class="settings-card">
             <p class="settings-card-title">📍 通知する出店場所</p>
             <label class="settings-option">
-              <input type="radio" name="placeMode" value="all" checked>
+              <input type="radio" id="place_all" name="placeMode" value="all" checked>
               <span class="settings-option-text">すべての出店を通知する</span>
             </label>
             <label class="settings-option">
-              <input type="radio" name="placeMode" value="custom">
+              <input type="radio" id="place_custom" name="placeMode" value="custom">
               <span class="settings-option-text">場所を選んで通知</span>
             </label>
             <div class="settings-places" id="placeList">
@@ -410,7 +410,7 @@
 
       <div class="section-card">
         <h2 class="section-title">ℹ️ アプリ情報</h2>
-        <p class="app-info-text">おにぎり屋かなたけ v1.3.3</p>
+        <p class="app-info-text">おにぎり屋かなたけ v1.4.0</p>
         <p class="app-info-text">端末ID: <span id="device-id-display" class="device-id-text"></span></p>
       </div>
     </section>
