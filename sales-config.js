@@ -96,4 +96,39 @@ window.KANATAKE_SALES_API_BASE =
     welcome.appendChild(mascot);
     home.insertBefore(welcome, home.firstChild);
   }
+
+  // 口コミ投稿欄の文字数制限を解除する。
+  var reviewBody = document.getElementById('review-body');
+
+  if (reviewBody) {
+    reviewBody.removeAttribute('maxlength');
+    reviewBody.placeholder = '口コミを書いてね';
+  }
+
+  // 固定上限の表示をやめ、入力文字数だけを表示する。
+  var reviewCounter =
+    document.querySelector('.review-char-count');
+
+  if (reviewCounter) {
+    var currentCount =
+      document.getElementById('review-char-current');
+
+    if (currentCount) {
+      currentCount.textContent =
+        reviewBody ? String(reviewBody.value.length) : '0';
+
+      reviewCounter.replaceChildren(
+        currentCount,
+        document.createTextNode('文字')
+      );
+    }
+  }
+
+  // 口コミ投稿日を非表示にする。
+  // 口コミ本文と店主返信は省略しない。
+  var reviewStyle = document.createElement('style');
+  reviewStyle.textContent =
+    '.kanatake-friendly .review-date { display: none !important; }';
+
+  document.head.appendChild(reviewStyle);
 })();
