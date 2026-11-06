@@ -20,13 +20,17 @@ window.KANATAKE_SALES_API_BASE =
 
   if (!isAdmin && !isApp) return;
 
-  // 共通デザインを読み込む
+  // 既存の公式アイコンを両アプリで共通使用する。
+  var mascotUrl =
+    'https://kimura-jane.github.io/kanatae-app/icon.png';
+
+  // 既存CSSの後から新しいテーマを読み込む。
   var stylesheet = document.createElement('link');
   stylesheet.rel = 'stylesheet';
   stylesheet.href = 'kanatake-theme.css?v=3';
   document.head.appendChild(stylesheet);
 
-  // 管理画面
+  // 店主用管理画面
   if (isAdmin) {
     document.body.classList.add('kanatake-admin');
 
@@ -40,7 +44,7 @@ window.KANATAKE_SALES_API_BASE =
       adminTitle.textContent = 'かなたけ管理画面';
 
       var adminLogo = document.createElement('img');
-      adminLogo.src = 'kanatake-mascot.png';
+      adminLogo.src = mascotUrl;
       adminLogo.alt = '';
       adminLogo.className = 'kanatake-logo';
 
@@ -50,18 +54,15 @@ window.KANATAKE_SALES_API_BASE =
     return;
   }
 
-  // アプリ全体
+  // お客様用アプリ
   document.body.classList.add('kanatake-friendly');
 
-  // 公式おにぎりキャラクター
   var headerLogo = document.querySelector('.header-icon');
-
   if (headerLogo) {
-    headerLogo.src = 'kanatake-mascot.png';
+    headerLogo.src = mascotUrl;
     headerLogo.alt = 'おにぎり屋かなたけのキャラクター';
   }
 
-  // ホーム画面のテーマ表示
   var home = document.getElementById('page-home');
 
   if (
@@ -70,11 +71,7 @@ window.KANATAKE_SALES_API_BASE =
   ) {
     var welcome = document.createElement('div');
     welcome.className = 'kanatake-welcome';
-
-    welcome.setAttribute(
-      'aria-label',
-      'おにぎりでえがお'
-    );
+    welcome.setAttribute('aria-label', 'おにぎりでえがお');
 
     var copy = document.createElement('div');
     copy.className = 'kanatake-welcome-copy';
@@ -89,19 +86,14 @@ window.KANATAKE_SALES_API_BASE =
 
     var mascot = document.createElement('img');
     mascot.className = 'kanatake-welcome-mascot';
-    mascot.src = 'kanatake-mascot.png';
+    mascot.src = mascotUrl;
     mascot.alt = '';
     mascot.loading = 'eager';
 
     copy.appendChild(kicker);
     copy.appendChild(message);
-
     welcome.appendChild(copy);
     welcome.appendChild(mascot);
-
-    home.insertBefore(
-      welcome,
-      home.firstChild
-    );
+    home.insertBefore(welcome, home.firstChild);
   }
 })();
