@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'kanatake-v19';
+const CACHE_NAME = 'kanatake-v20';
 
 // ===== Utils =====
 function getBasePath() {
@@ -17,6 +17,7 @@ function isCoreAsset(pathname, BASE) {
     BASE + 'kanatake-theme.css',
     BASE + 'app.js',
     BASE + 'checkin-offline.js',
+    BASE + 'coupon-operations.js',
     BASE + 'vendor/html5-qrcode.min.js',
     BASE + 'spots-feed.json',
     BASE + 'manifest.json',
@@ -55,6 +56,7 @@ self.addEventListener('install', (e) => {
     BASE + 'kanatake-theme.css?v=3',
     BASE + 'app.js',
     BASE + 'checkin-offline.js',
+    BASE + 'coupon-operations.js',
     BASE + 'vendor/html5-qrcode.min.js',
     BASE + 'sales-board.js',
     BASE + 'sales-board.css',
