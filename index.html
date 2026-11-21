@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
+  <script src="vendor/html5-qrcode.min.js" defer></script>
 
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="sales-board.css">
@@ -265,7 +265,8 @@
         <div id="qr-reader" class="qr-reader"></div>
         <button class="btn btn-large btn-qr" id="qr-start-btn">📷 QRスキャン開始</button>
         <p id="qr-result" class="result-text"></p>
-        <p class="qr-note">※ 1日1回・お店から500m以内で有効</p>
+        <p class="qr-note">※ 1日1回・位置情報が取得できなくても受付できます</p>
+        <p class="qr-note" id="qr-pending-status" aria-live="polite"></p>
       </div>
     </section>
 
@@ -494,6 +495,7 @@
 })();
 </script>
 
+<script src="checkin-offline.js"></script>
 <script src="app.js"></script>
 <script src="sales-config.js"></script>
 <script src="sales-board.js"></script>
