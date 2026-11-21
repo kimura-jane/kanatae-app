@@ -55,3 +55,17 @@ PRのマージ時は**最新mainの`spots-feed.json`をそのまま維持**す�
 - 回帰テストを`tests/redeem-points.test.cjs`に追加。iOSは`npm test`で両テストを実行
 - Workerの現在の実コードはCodexのローカル`worker-draft.mjs`に保存されており、GitHub参考Workerとは別。Codex側のコードでデプロイ前にAPI契約を確認すること
 - Codex監査はB判定、クラウド本番への変更は未実施。受付の過去・未来許容期間は運用者の決定待ち。新APIを本番公開してからアプリを公開する
+
+## 2026-11-21 最終Worker契約対応（client-compatibility.md / worker-final.mjs照合済み）
+
+- `/points` の`current_points`、`total_redeemed`、`megami_coupon_active`を検証してUIへ反映する
+- `/redeem-points`には`device_id`、`required_points:20`、保存済みUUIDの`request_id`、操作開始時の`coupon_generation=total_redeemed`を送信する
+- `/megami-coupon/use`には`device_id`、同じ仕組みで保存した`request_id`と`coupon_generation`を送る
+- 操作IDは`coupon-operations.js`に保存し、通信エラー／5xx時にも再生成しない。未確定操作を確認するボタンを設置し、**店頭でのクーポン使用は自動再送しない**
+- HTTP 200 `replayed:true` は再実行ではなく同じ操作の再確認として表示。409は最新`/points`を読み、古い未確定操作を終える
+- FiNANCiE保有クーポンは`coupon_id`を行単位で送信。同じ`code`の別保有行を誤って使わない
+- `checkin_expired`は最終Workerの`code`フィールドを読み、90日超の記録を残して詳細表示する
+- 回帰テスト：`tests/checkin-offline.test.cjs`（6件）、`tests/redeem-points.test.cjs`（6件）、`tests/financie-coupon.test.cjs`（3件）
+- **注意：添付`worker-final.mjs`はCloudflare本番に未デプロイ。新Workerには`coupon_operations_v1`のD1移行が必要。** GitHubのWorker参考コードを本番に直接デプロイしない
+- **旧アプリは`request_id`と`coupon_generation`を送らないため、新Worker切替後に特典交換・使用が400になる。** Codex側で段階移行・旧アプリ互換策を確定するまで公開不可
+- Android側`main`の12月出店情報（`spots-feed.json`）は保持。GitHub作業ブランチのみを更新し、本番アプリ／Worker／D1は未変更
