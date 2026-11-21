@@ -181,8 +181,8 @@
       // 期限超過の受付は削除せず、利用者が日時と理由を確認できるようにする。
       return {
         status: "rejected",
-        error: res.status === 403 && data.error === "checkin_expired"
-          ? "受付期限（90日）を過ぎています。店舗にご確認ください。"
+        error: res.status === 403 && (data.code === "checkin_expired" || data.error === "checkin_expired")
+          ? String(data.error && data.error !== "checkin_expired" ? data.error : "受付期限（90日）を過ぎています。店舗にご確認ください。")
           : String(data.error || "サーバーで受付できませんでした")
       };
     } catch (_) {
