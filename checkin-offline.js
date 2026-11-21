@@ -12,6 +12,7 @@
   let savedState = null;
   let storageLock = Promise.resolve();
   let flushPromise = null;
+  let enqueuedDuringFlush = false;
 
   function dateInJst(value) {
     return new Date(value.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -133,6 +134,7 @@
         if (Number.isFinite(input.accuracy)) record.accuracy = input.accuracy;
       }
       await storeRecords(state.records.concat(record));
+      if (flushPromise) enqueuedDuringFlush = true;
       return { record: Object.assign({}, record), duplicate: false };
     });
   }
@@ -188,7 +190,8 @@
     for (const record of snapshot) {
       if (record.status !== "pending") continue;
       const outcome = await submit(record);
-      if (outcome.status === "pending") continue;
+      // API停止中は次の受付にも連続送信せず、次回の通信回復まで待つ。
+      if (outcome.status === "pending") break;
       await serialized(async function () {
         const state = await loadState();
         const index = state.records.findIndex(function (item) { return item.id === record.id; });
@@ -214,9 +217,29 @@
     return result;
   }
 
+  // 送信中に新しい受付が追加された場合、最初のスナップショットから
+  // 漏れた受付を次のラウンドで送信する（上限2回、無限再送はしない）。
+  async function flushRounds() {
+    const combined = { confirmed: [], already: [], rejected: [], pending: 0, rejectedCount: 0 };
+    for (let round = 0; round < 2; round++) {
+      enqueuedDuringFlush = false;
+      const result = await flushCore();
+      combined.confirmed.push(...result.confirmed);
+      combined.already.push(...result.already);
+      combined.rejected.push(...result.rejected);
+      combined.pending = result.pending;
+      combined.rejectedCount = result.rejectedCount;
+      if (!enqueuedDuringFlush || navigator.onLine === false ||
+          (result.pending > 0 && result.confirmed.length === 0 && result.already.length === 0)) {
+        break;
+      }
+    }
+    return combined;
+  }
+
   function flush() {
     if (!flushPromise) {
-      flushPromise = flushCore().finally(function () { flushPromise = null; });
+      flushPromise = flushRounds().finally(function () { flushPromise = null; });
     }
     return flushPromise;
   }
