@@ -978,53 +978,73 @@ document.getElementById("coupon-code-btn").addEventListener("click", async () =>
 });
 
 // ===== 保有クーポン =====
+// ===== 保有クーポン =====
 async function loadMyCoupons() {
   const area = document.getElementById("my-coupons-area");
   const list = document.getElementById("my-coupons-list");
   if (!area || !list) return;
   try {
     const res = await fetch(`${API_BASE}/my-coupons?device_id=${encodeURIComponent(DEVICE_ID)}`);
+    if (!res.ok) throw new Error("coupon HTTP " + res.status);
     const data = await res.json();
-    if (!data.coupons || data.coupons.length === 0) {
+    if (!Array.isArray(data.coupons) || data.coupons.length === 0) {
       area.style.display = "none";
       return;
     }
     area.style.display = "block";
-    list.innerHTML = data.coupons.map(c => {
-      const isUsed = !!c.used;
-      return `<div class="my-coupon-card ${isUsed ? 'used' : ''}">
-        ${c.image ? `<img class="my-coupon-img" src="${c.image}" alt="">` : ""}
+    list.innerHTML = data.coupons.map(function (c, index) {
+      const used = !!c.used;
+      return `<div class="my-coupon-card ${used ? "used" : ""}">
+        ${c.image ? `<img class="my-coupon-img" src="${escapeHtml(c.image)}" alt="" onerror="this.style.display='none'">` : ""}
         <div class="my-coupon-info">
-          <div class="my-coupon-name">${escapeHtml(c.name)}</div>
-          <div class="my-coupon-prize">${escapeHtml(c.prize)}</div>
-          <div class="my-coupon-status">${isUsed ? `✅ 使用済み（${formatDate(c.used_at)}）` : `取得: ${formatDate(c.acquired_at)}`}</div>
-          ${!isUsed ? `<button class="btn btn-primary btn-sm" onclick="useMyCoupon('${c.code}')">使用済みにする</button>` : ""}
+          <div class="my-coupon-name">${escapeHtml(c.name || "")}</div>
+          <div class="my-coupon-prize">${escapeHtml(c.prize || "")}</div>
+          <div class="my-coupon-status">${used
+            ? `✅ 使用済み（${formatDate(c.used_at)}）`
+            : `取得: ${formatDate(c.acquired_at)}`}</div>
+          ${!used ? `<button class="btn btn-danger btn-sm" data-coupon-row="${index}">使用済みにする</button>` : ""}
         </div>
       </div>`;
     }).join("");
+    // HTML内にコードを埋め込まない。IDごとに処理し、同コードの別保有行を巻き込まない。
+    list.querySelectorAll("button[data-coupon-row]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        const index = Number(button.dataset.couponRow);
+        const item = data.coupons[index];
+        if (item) useMyCoupon(item.code, item.id);
+      });
+    });
   } catch (e) {
     console.warn("loadMyCoupons failed:", e);
-    if (area) area.style.display = "none";
+    area.style.display = "none";
   }
 }
 
-async function useMyCoupon(code) {
+let fiCouponUseBusy = false;
+async function useMyCoupon(code, couponId) {
+  if (fiCouponUseBusy) return;
   if (!confirm("⚠️ このクーポンを使用済みにしますか？\n店主の目の前で押してください。")) return;
+  fiCouponUseBusy = true;
   try {
+    const body = { device_id: DEVICE_ID, code: code };
+    if (Number.isSafeInteger(couponId) && couponId > 0) body.coupon_id = couponId;
     const res = await fetch(`${API_BASE}/use-coupon`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ device_id: DEVICE_ID, code })
+      body: JSON.stringify(body)
     });
     const data = await res.json();
-    if (data.ok) {
+    if (res.ok && data.ok) {
       alert("✅ 使用済みにしました！");
-      loadMyCoupons();
     } else {
-      alert("❌ " + (data.error || "エラーが発生しました"));
+      alert("❌ " + (data.error || "使用状況を確認してください"));
     }
+    await loadMyCoupons();
   } catch (e) {
-    alert("❌ 通信エラー");
+    alert("通信結果を確認できませんでした。クーポン一覧を更新してご確認ください。");
+    await loadMyCoupons();
+  } finally {
+    fiCouponUseBusy = false;
   }
 }
 
