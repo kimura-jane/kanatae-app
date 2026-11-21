@@ -1017,6 +1017,7 @@ async function getOptionalCheckinLocation() {
 
 async function updatePendingCheckinDisplay() {
   const el = document.getElementById("qr-pending-status");
+  const details = document.getElementById("qr-pending-details");
   if (!el || !window.KanatakeOfflineCheckin) return;
   try {
     const records = await window.KanatakeOfflineCheckin.pendingRecords();
@@ -1025,6 +1026,34 @@ async function updatePendingCheckinDisplay() {
     el.textContent = pending || rejected ?
       "未確定の来店記録: " + pending + "件" +
       (rejected ? " ／ 確認が必要: " + rejected + "件" : "") : "";
+
+    // 期限切れを含め、端末に残した受付の日時と理由を個別に確認できる。
+    // QR本文・端末IDは画面に出さない。文字列はtextContentで安全に表示する。
+    if (details) {
+      details.replaceChildren();
+      details.hidden = !(pending || rejected);
+      if (pending || rejected) {
+        const summary = document.createElement("summary");
+        summary.textContent = "仮受付の記録を確認する（" + records.length + "件）";
+        details.appendChild(summary);
+        const list = document.createElement("ul");
+        list.className = "qr-pending-list";
+        records.forEach(function (item) {
+          const li = document.createElement("li");
+          const dt = new Date(item.scanned_at);
+          const when = Number.isFinite(dt.getTime()) ?
+            new Intl.DateTimeFormat("ja-JP", {
+              timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit",
+              day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false
+            }).format(dt) : "日時不明";
+          const status = item.status === "rejected" ? "確認が必要" : "仮受付";
+          li.textContent = when + " ／ " + status +
+            (item.status === "rejected" && item.error ? " ／ " + item.error : "");
+          list.appendChild(li);
+        });
+        details.appendChild(list);
+      }
+    }
   } catch (_) {
     el.textContent = "仮受付の保存状態を確認できませんでした";
   }
