@@ -40,3 +40,9 @@ iOS版の作業用ブランチ `CHECKIN_V2_HANDOFF.md` を参照すること。
 - 自動回帰テスト: `node --test tests/checkin-offline.test.cjs`
 - WorkerはCodexが実運用コードを監査・修正予定。Cloudflareデプロイ前にAndroid/Web版の本番公開は行わない
 - 既存の`kanatake_device_id`、ポイント、クーポン、カレンダー、通知機能を変更しない
+
+## 2026-11-21 mainの更新について
+
+この作業用ブランチの分岐後、mainの`spots-feed.json`に12月の出店予定に関する3コミットが追加されている。
+作業ブランチでは`spots-feed.json`を一切編集していない。
+PRのマージ時は**最新mainの`spots-feed.json`をそのまま維持**すること。main全体を作業ブランチの状態で上書きしないこと。
