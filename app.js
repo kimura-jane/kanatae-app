@@ -458,6 +458,8 @@ function updateMegamiCouponUI() {
 async function updateCouponOperationDisplay() {
   const status = document.getElementById("coupon-operation-status");
   const retry = document.getElementById("coupon-operation-retry");
+  const couponPanel = document.getElementById("coupon-operation-panel-coupon");
+  const couponNote = document.getElementById("coupon-operation-status-coupon");
   if (!status || !retry || !window.KanatakeCouponOperations || !DEVICE_ID) return;
   try {
     const pending = await window.KanatakeCouponOperations.get(DEVICE_ID);
@@ -467,10 +469,13 @@ async function updateCouponOperationDisplay() {
         "を確認できていません。再確認してください。"
       : "";
     retry.textContent = pending ? "前回の操作を再確認" : "";
+    if (couponPanel) couponPanel.style.display = pending ? "block" : "none";
+    if (couponNote) couponNote.textContent = status.textContent;
     if (pending) document.getElementById("redeem-btn").style.display = "none";
   } catch (e) {
     status.textContent = e.message || "特典操作の保存状態を確認できません";
     retry.style.display = "none";
+    if (couponPanel) couponPanel.style.display = "none";
   }
 }
 
@@ -580,7 +585,7 @@ document.getElementById("megami-use-btn").addEventListener("click", function () 
   runCouponOperation("use");
 });
 
-document.getElementById("coupon-operation-retry").addEventListener("click", async function () {
+async function retryLastCouponOperation() {
   const store = window.KanatakeCouponOperations;
   if (!store || couponOperationBusy) return;
   try {
@@ -590,7 +595,12 @@ document.getElementById("coupon-operation-retry").addEventListener("click", asyn
   } catch (e) {
     alert(e.message || "保存した特典操作を確認できませんでした");
   }
-});
+}
+
+document.getElementById("coupon-operation-retry")
+  .addEventListener("click", retryLastCouponOperation);
+document.getElementById("coupon-operation-retry-coupon")
+  .addEventListener("click", retryLastCouponOperation);
 
 // ===== カレンダー =====
 let currentYear, currentMonth;
