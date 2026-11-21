@@ -78,6 +78,8 @@
           <p class="stamp-count">現在 <span id="stamp-current">0</span> / 20 ポイント</p>
           <p class="stamp-reward">20ポイントで「女神のほほえみ」プレゼント！</p>
           <button class="btn btn-primary" id="redeem-btn" style="display:none;">🎁 特典を受け取る</button>
+          <p class="coupon-warning" id="coupon-operation-status" aria-live="polite"></p>
+          <button class="btn btn-secondary" id="coupon-operation-retry" style="display:none;">前回の操作を再確認</button>
         </div>
       </div>
 
@@ -497,6 +499,7 @@
 </script>
 
 <script src="checkin-offline.js"></script>
+<script src="coupon-operations.js"></script>
 <script src="app.js"></script>
 <script src="sales-config.js"></script>
 <script src="sales-board.js"></script>
