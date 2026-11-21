@@ -942,59 +942,144 @@ document.getElementById("qr-start-btn").addEventListener("click", async () => {
   }
 });
 
-async function processCheckin(qrText) {
-  const resultEl = document.getElementById("qr-result");
-  resultEl.className = "result-text loading";
-  resultEl.textContent = "📍 今日の出店場所を確認中…";
-  const todaySpot = getTodaySpot();
-  if (!todaySpot) {
-    resultEl.className = "result-text error";
-    resultEl.textContent = "❌ 今日の出店データが見つかりません";
-    return;
-  }
-  resultEl.textContent = "📍 位置情報を取得中…";
-  let latitude, longitude;
-  try {
-    const pos = await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true, timeout: 10000, maximumAge: 0
-      });
-    });
-    latitude = pos.coords.latitude;
-    longitude = pos.coords.longitude;
-  } catch (e) {
-    resultEl.className = "result-text error";
-    resultEl.textContent = "❌ 位置情報を取得できませんでした。位置情報を許可してください。";
-    return;
-  }
-  resultEl.textContent = "⏳ チェックイン中…";
-  try {
-    const res = await fetch(`${API_BASE}/checkin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        device_id: DEVICE_ID, latitude, longitude,
-        spot_lat: todaySpot.lat, spot_lng: todaySpot.lng, spot_name: todaySpot.name
-      })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      resultEl.className = "result-text success";
-      resultEl.textContent = `🎉 チェックイン成功！\n📍 ${data.location}\n⭐ 現在 ${data.current_points} ポイント`;
-      updateStampUI(data.current_points);
-    } else {
-      resultEl.className = "result-text error";
-      const msgs = {
-        "already checked in today": "本日はすでにチェックイン済みです",
-        "not within 500m of today's location": `お店から離れすぎています（${data.distance || "?"}m）`
-      };
-      resultEl.textContent = "❌ " + (msgs[data.error] || data.error);
+async function getOptionalCheckinLocation() {
+  // GPS取得失敗・拒否・タイムアウトはチェックインを妨げない。
+  if (!navigator.geolocation) return null;
+  return new Promise(function (resolve) {
+    let finished = false;
+    const deadline = setTimeout(function () {
+      if (!finished) { finished = true; resolve(null); }
+    }, 3000);
+    try {
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        if (finished) return;
+        finished = true;
+        clearTimeout(deadline);
+        resolve({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy
+        });
+      }, function () {
+        if (finished) return;
+        finished = true;
+        clearTimeout(deadline);
+        resolve(null);
+      }, { enableHighAccuracy: false, timeout: 2500, maximumAge: 60000 });
+    } catch (_) {
+      if (!finished) {
+        finished = true;
+        clearTimeout(deadline);
+        resolve(null);
+      }
     }
-  } catch (e) {
-    resultEl.className = "result-text error";
-    resultEl.textContent = "❌ 通信エラー";
+  });
+}
+
+async function updatePendingCheckinDisplay() {
+  const el = document.getElementById("qr-pending-status");
+  if (!el || !window.KanatakeOfflineCheckin) return;
+  try {
+    const records = await window.KanatakeOfflineCheckin.pendingRecords();
+    const pending = records.filter(function (item) { return item.status === "pending"; }).length;
+    const rejected = records.filter(function (item) { return item.status === "rejected"; }).length;
+    el.textContent = pending || rejected ?
+      "未確定の来店記録: " + pending + "件" +
+      (rejected ? " ／ 確認が必要: " + rejected + "件" : "") : "";
+  } catch (_) {
+    el.textContent = "仮受付の保存状態を確認できませんでした";
   }
 }
+
+async function retryPendingCheckins() {
+  if (!window.KanatakeOfflineCheckin || navigator.onLine === false) {
+    await updatePendingCheckinDisplay();
+    return;
+  }
+  try {
+    const result = await window.KanatakeOfflineCheckin.flush();
+    if (result.confirmed.length || result.already.length) {
+      await loadPoints();
+    }
+  } catch (e) {
+    console.warn("check-in retry failed:", e);
+  }
+  await updatePendingCheckinDisplay();
+}
+
+async function processCheckin(qrText) {
+  const resultEl = document.getElementById("qr-result");
+  const checkin = window.KanatakeOfflineCheckin;
+  if (!checkin) {
+    resultEl.className = "result-text error";
+    resultEl.textContent = "❌ 来店受付機能を読み込めませんでした";
+    return;
+  }
+  resultEl.className = "result-text loading";
+  resultEl.textContent = "⏳ QRコードを確認中…";
+
+  // 出店情報は取得できた場合だけ使う。通信やGPSで受付を中断しない。
+  const todaySpot = getTodaySpot();
+  const location = await getOptionalCheckinLocation();
+  let queued;
+  try {
+    queued = await checkin.enqueue({
+      device_id: DEVICE_ID,
+      qr_data: qrText,
+      spot_name: todaySpot ? todaySpot.name : "",
+      latitude: location ? location.latitude : null,
+      longitude: location ? location.longitude : null,
+      accuracy: location ? location.accuracy : null
+    });
+  } catch (e) {
+    resultEl.className = "result-text error";
+    resultEl.textContent = "❌ " + (e.message || "仮受付を保存できませんでした");
+    return;
+  }
+
+  // 先に永続保存してからサーバーに送る。通信切断でも記録を失わない。
+  resultEl.className = "result-text loading";
+  resultEl.textContent = "⏳ 来店記録を保存しました。ポイント確認中…";
+  try {
+    const summary = await checkin.flush();
+    const id = queued.record.id;
+    const confirmed = summary.confirmed.find(function (item) { return item.id === id; });
+    const already = summary.already.find(function (item) { return item.id === id; });
+    const rejected = summary.rejected.find(function (item) { return item.id === id; });
+    if (confirmed) {
+      resultEl.className = "result-text success";
+      resultEl.textContent = "🎉 チェックイン成功！1ポイント付与されました。";
+      await loadPoints();
+    } else if (already) {
+      resultEl.className = "result-text error";
+      resultEl.textContent = "本日はすでにチェックイン済みです";
+      await loadPoints();
+    } else if (rejected) {
+      resultEl.className = "result-text error";
+      resultEl.textContent = "❌ サーバーで受付できませんでした: " + rejected.error;
+    } else {
+      resultEl.className = "result-text success";
+      resultEl.textContent = queued.duplicate ?
+        "✅ 本日の来店は仮受付済みです。通信回復後にポイントを確認します。" :
+        "✅ 来店を仮受付しました。通信回復後にポイントを確認します。\n※ まだポイントは加算されていません。";
+    }
+  } catch (e) {
+    resultEl.className = "result-text success";
+    resultEl.textContent = "✅ 来店を仮受付しました。通信回復後にポイントを確認します。\n※ まだポイントは加算されていません。";
+    console.warn("check-in sync deferred:", e);
+  }
+  await updatePendingCheckinDisplay();
+}
+
+// 通信回復時・アプリ復帰時・再起動時に未送信の来店記録を再送する。
+window.addEventListener("online", retryPendingCheckins);
+document.addEventListener("visibilitychange", function () {
+  if (!document.hidden) retryPendingCheckins();
+});
+document.addEventListener("DOMContentLoaded", function () {
+  updatePendingCheckinDisplay();
+  retryPendingCheckins();
+});
 
 // ===== 口コミ =====
 async function loadReviews() {
