@@ -7,7 +7,9 @@
 
   const STORAGE_KEY = "kanatake_pending_checkins_v1";
   const CHECKIN_URL = "https://kanatake-api.la-kofu.workers.dev/checkin-v2";
-  const MAX_RECORDS = 60;
+  // 最大90日分の仮受付を保持できるよう余裕を確保。
+  // 不受理記録は証拠として保持し、仮受付件数の上限には含めない。
+  const MAX_PENDING_RECORDS = 180;
   const TIMEOUT_MS = 10000;
   let savedState = null;
   let storageLock = Promise.resolve();
@@ -116,7 +118,7 @@
           item.scanned_date_jst === day && item.status === "pending";
       });
       if (existing) return { record: Object.assign({}, existing), duplicate: true };
-      if (state.records.length >= MAX_RECORDS) {
+      if (state.records.filter(function (item) { return item.status === "pending"; }).length >= MAX_PENDING_RECORDS) {
         throw new Error("未確定の来店記録が多すぎます。通信回復後に再度お試しください");
       }
       const record = {
@@ -176,7 +178,13 @@
           res.status === 429 || res.status >= 500) {
         return { status: "pending" };
       }
-      return { status: "rejected", error: String(data.error || "サーバーで受付できませんでした") };
+      // 期限超過の受付は削除せず、利用者が日時と理由を確認できるようにする。
+      return {
+        status: "rejected",
+        error: res.status === 403 && data.error === "checkin_expired"
+          ? "受付期限（90日）を過ぎています。店舗にご確認ください。"
+          : String(data.error || "サーバーで受付できませんでした")
+      };
     } catch (_) {
       return { status: "pending" };
     } finally {
