@@ -67,5 +67,13 @@ PRのマージ時は**最新mainの`spots-feed.json`をそのまま維持**す�
 - `checkin_expired`は最終Workerの`code`フィールドを読み、90日超の記録を残して詳細表示する
 - 回帰テスト：`tests/checkin-offline.test.cjs`（6件）、`tests/redeem-points.test.cjs`（6件）、`tests/financie-coupon.test.cjs`（3件）
 - **注意：添付`worker-final.mjs`はCloudflare本番に未デプロイ。新Workerには`coupon_operations_v1`のD1移行が必要。** GitHubのWorker参考コードを本番に直接デプロイしない
-- **旧アプリは`request_id`と`coupon_generation`を送らないため、新Worker切替後に特典交換・使用が400になる。** Codex側で段階移行・旧アプリ互換策を確定するまで公開不可
+- **旧アプリは`request_id`と`coupon_generation`を送らないため、状態を変える交換・使用は新Workerでは426で拒否される。状態により400または409になる。** 旧アプリでは使用失敗が画面に表示されないため、切替前に利用者案内・実機確認が必要
 - Android側`main`の12月出店情報（`spots-feed.json`）は保持。GitHub作業ブランチのみを更新し、本番アプリ／Worker／D1は未変更
+
+## 2026-11-22 最終公開前の注意（旧説明より優先）
+
+- **Workerの正本は `kimura-jane/kanatake-api` の `fix/kanatake-api-safe-20261122` の `src/index.js`**。iOS PR 内の `cloudflare/worker-1.4.0.js` は同期済みの検証用コピーであり、そこから本番デプロイしない。
+- Codex が本番D1を読み取り、`checkin_claims_v2` の主キーと `(device_id, checkin_date_jst)` UNIQUE を確認。**`coupon_operations_v1` は本番に未作成**。正しい追加SQLは `kanatake-api/migrations/coupon_operations_v1.sql`。旧手順の参考SQLを流用しない。
+- 新Workerは旧アプリの曖昧な交換・使用を安全側で拒否する。状態に応じて **426 `app_update_required`、400、409**。旧アプリの使用ボタンは426を表示しないコードになっているため、既存利用者への更新告知・実機確認が必須。
+- iOS・Androidの新アプリは `request_id`・`coupon_generation` を送信するコードに変更済み。ただし両PRはドラフトで、新Workerとの**実機／隔離Cloudflare結合試験は未実施**。
+- **本番D1への書き込み、本番Workerのトラフィック切替、mainへのマージ、ストア配信は許可なく行わない**。本番稼働Workerの全文を再確認し、全ルートの欠落がないか比較してから公開判断する。
