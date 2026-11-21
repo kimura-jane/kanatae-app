@@ -32,3 +32,11 @@ iOS版の作業用ブランチ `CHECKIN_V2_HANDOFF.md` を参照すること。
 4. Android配布方式に応じてGoogle Playの更新手続を判断
 
 本番Cloudflare、GitHub Pages、Google Playへの反映はこの作業用ブランチでは行わない。
+
+## 2026-11-21 GitHub追加修正
+
+- QRスキャンの多重コールバックをガード
+- API障害時の連続送信を停止。送信中の受付は次のラウンドで再送
+- 自動回帰テスト: `node --test tests/checkin-offline.test.cjs`
+- WorkerはCodexが実運用コードを監査・修正予定。Cloudflareデプロイ前にAndroid/Web版の本番公開は行わない
+- 既存の`kanatake_device_id`、ポイント、クーポン、カレンダー、通知機能を変更しない
