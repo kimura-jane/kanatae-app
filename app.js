@@ -910,8 +910,10 @@ async function useMyCoupon(code) {
 
 // ===== QRスキャン =====
 let html5QrCode = null;
+let qrProcessing = false;
 
 document.getElementById("qr-start-btn").addEventListener("click", async () => {
+  if (qrProcessing) return;
   const resultEl = document.getElementById("qr-result");
   resultEl.className = "result-text";
   resultEl.textContent = "";
@@ -930,9 +932,25 @@ document.getElementById("qr-start-btn").addEventListener("click", async () => {
       { facingMode: "environment" },
       { fps: 10, qrbox: { width: 250, height: 250 } },
       async (decodedText) => {
-        try { await html5QrCode.stop(); } catch (e) {}
-        html5QrCode = null;
-        await processCheckin(decodedText);
+        // 読み取り通知は連続発火するため、同じQRを並行処理しない。
+        if (qrProcessing) return;
+        qrProcessing = true;
+        const reader = html5QrCode;
+        try {
+          if (reader) await reader.stop();
+        } catch (e) {
+          console.warn("QR stop failed:", e);
+        }
+        if (html5QrCode === reader) html5QrCode = null;
+        try {
+          await processCheckin(decodedText);
+        } catch (e) {
+          console.error("QR check-in failed:", e);
+          resultEl.className = "result-text error";
+          resultEl.textContent = "❌ 来店受付処理でエラーが発生しました";
+        } finally {
+          qrProcessing = false;
+        }
       },
       () => {}
     );
