@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
+  <script src="vendor/html5-qrcode.min.js" defer></script>
 
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="sales-board.css">
@@ -78,6 +78,8 @@
           <p class="stamp-count">現在 <span id="stamp-current">0</span> / 20 ポイント</p>
           <p class="stamp-reward">20ポイントで「女神のほほえみ」プレゼント！</p>
           <button class="btn btn-primary" id="redeem-btn" style="display:none;">🎁 特典を受け取る</button>
+          <p class="coupon-warning" id="coupon-operation-status" aria-live="polite"></p>
+          <button class="btn btn-secondary" id="coupon-operation-retry" style="display:none;">前回の操作を再確認</button>
         </div>
       </div>
 
@@ -120,6 +122,10 @@
 
     <!-- ===== クーポン ===== -->
     <section class="page" id="page-coupon">
+      <div class="section-card" id="coupon-operation-panel-coupon" style="display:none;">
+        <p class="coupon-warning" id="coupon-operation-status-coupon" aria-live="polite"></p>
+        <button class="btn btn-secondary btn-full" id="coupon-operation-retry-coupon">前回の操作を再確認</button>
+      </div>
 
       <div class="section-card">
         <h2 class="section-title">🍙 メニュー</h2>
@@ -266,6 +272,8 @@
         <button class="btn btn-large btn-qr" id="qr-start-btn">📷 QRスキャン開始</button>
         <p id="qr-result" class="result-text"></p>
         <p class="qr-note">※ 1日1回。来店チェックインのため、位置情報を取得していいですか？</p>
+        <p class="qr-note" id="qr-pending-status" aria-live="polite"></p>
+        <details class="qr-note" id="qr-pending-details" hidden></details>
       </div>
     </section>
 
@@ -494,6 +502,8 @@
 })();
 </script>
 
+<script src="checkin-offline.js"></script>
+<script src="coupon-operations.js"></script>
 <script src="app.js"></script>
 <script src="sales-config.js"></script>
 <script src="sales-board.js"></script>

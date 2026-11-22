@@ -99,7 +99,10 @@ function switchPage(page) {
   }
   if (page === "reviews") loadReviews();
   if (page === "settings") loadCheckinHistory();
-  if (page === "coupon") loadMyCoupons();
+  if (page === "coupon") {
+    loadMyCoupons();
+    updateCouponOperationDisplay();
+  }
   const pageEl = document.getElementById(`page-${page}`);
   if (pageEl) pageEl.scrollTop = 0;
 }
@@ -206,6 +209,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("device-id-display").textContent = DEVICE_ID;
   initStampGrid();
   await loadPoints();
+  await updateCouponOperationDisplay();
   await loadNotices();
   initMenuModal();
   initCalendarRangeAndStartMonth();
@@ -394,6 +398,8 @@ document.getElementById("notices-more-btn").addEventListener("click", () => { lo
 
 // ===== スタンプ / ポイント =====
 let megamiCouponActive = false;
+let couponGeneration = null;
+let couponOperationBusy = false;
 
 function initStampGrid() {
   const grid = document.getElementById("stamp-grid");
@@ -404,19 +410,36 @@ function initStampGrid() {
   grid.innerHTML = html;
 }
 
+function applyPointsState(data) {
+  if (!data || !Number.isSafeInteger(data.current_points) ||
+      data.current_points < 0 || !Number.isSafeInteger(data.total_redeemed) ||
+      data.total_redeemed < 0) return false;
+  couponGeneration = data.total_redeemed;
+  megamiCouponActive = !!data.megami_coupon_active;
+  updateStampUI(data.current_points);
+  updateMegamiCouponUI();
+  return true;
+}
+
+async function fetchPointsSnapshot() {
+  const res = await fetch(`${API_BASE}/points`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ device_id: DEVICE_ID })
+  });
+  if (!res.ok) throw new Error("points HTTP " + res.status);
+  const data = await res.json();
+  if (!applyPointsState(data)) throw new Error("invalid points response");
+  return data;
+}
+
 async function loadPoints() {
   try {
-    const res = await fetch(`${API_BASE}/points`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ device_id: DEVICE_ID })
-    });
-    const data = await res.json();
-    updateStampUI(data.current_points || 0);
-    megamiCouponActive = !!(data.megami_coupon_active);
-    updateMegamiCouponUI();
+    await fetchPointsSnapshot();
+    return true;
   } catch (e) {
     console.warn("load points failed:", e);
+    return false;
   }
 }
 
@@ -431,46 +454,153 @@ function updateMegamiCouponUI() {
   document.getElementById("megami-coupon-area").style.display = megamiCouponActive ? "block" : "none";
 }
 
-document.getElementById("redeem-btn").addEventListener("click", async () => {
-  if (!confirm("20ポイントで「女神のほほえみ」と交換しますか？\nポイントは0にリセットされます。")) return;
+// 「使用済み」は店頭操作のため自動再送しない。通信復旧後も利用者が明示して再確認する。
+async function updateCouponOperationDisplay() {
+  const status = document.getElementById("coupon-operation-status");
+  const retry = document.getElementById("coupon-operation-retry");
+  const couponPanel = document.getElementById("coupon-operation-panel-coupon");
+  const couponNote = document.getElementById("coupon-operation-status-coupon");
+  if (!status || !retry || !window.KanatakeCouponOperations || !DEVICE_ID) return;
   try {
-    const res = await fetch(`${API_BASE}/redeem-points`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ device_id: DEVICE_ID, required_points: 20 })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      alert("🎉 おめでとうございます！\nクーポンタブに「女神のほほえみ」クーポンが届きました！");
-      megamiCouponActive = true;
-      updateStampUI(0);
-      updateMegamiCouponUI();
+    const pending = await window.KanatakeCouponOperations.get(DEVICE_ID);
+    retry.style.display = pending ? "block" : "none";
+    status.textContent = pending
+      ? "前回の" + (pending.action === "redeem" ? "特典交換" : "クーポン使用") +
+        "を確認できていません。再確認してください。"
+      : "";
+    retry.textContent = pending ? "前回の操作を再確認" : "";
+    if (couponPanel) couponPanel.style.display = pending ? "block" : "none";
+    if (couponNote) couponNote.textContent = status.textContent;
+    if (pending) document.getElementById("redeem-btn").style.display = "none";
+  } catch (e) {
+    status.textContent = e.message || "特典操作の保存状態を確認できません";
+    retry.style.display = "none";
+    if (couponPanel) couponPanel.style.display = "none";
+  }
+}
+
+async function runCouponOperation(action) {
+  if (couponOperationBusy) return;
+  const store = window.KanatakeCouponOperations;
+  if (!store || !DEVICE_ID) {
+    alert("特典操作の準備ができませんでした。アプリを再起動してください。");
+    return;
+  }
+  couponOperationBusy = true;
+  const redeemButton = document.getElementById("redeem-btn");
+  const useButton = document.getElementById("megami-use-btn");
+  redeemButton.disabled = true;
+  useButton.disabled = true;
+  try {
+    const pending = await store.get(DEVICE_ID);
+    if (pending && pending.action !== action) {
+      alert("前回の特典操作が未確認です。先に「前回の操作を再確認」を押してください。");
+      return;
+    }
+    if (pending) {
+      const note = action === "use"
+        ? "前回の使用処理を再確認します。店主の目の前で行ってください。"
+        : "前回の交換結果を、同じ受付番号で再確認します。";
+      if (!confirm(note)) return;
     } else {
-      alert("交換できませんでした: " + (data.error || ""));
+      const prompt = action === "redeem"
+        ? "20ポイントで「女神のほほえみ」と交換しますか？\n交換後も20ポイントを超えた分は残ります。"
+        : "⚠️ 「女神のほほえみ」を使用済みにしますか？\n店主の目の前で押してください。";
+      if (!confirm(prompt)) return;
+    }
+
+    let operation = pending;
+    if (!operation) {
+      // 古い世代の操作IDを再利用しないよう、作成直前に最新の残高を読む。
+      const points = await fetchPointsSnapshot();
+      if (action === "redeem" && (points.current_points < 20 || !!points.megami_coupon_active)) {
+        alert("現在は交換できません。ポイントとクーポンの状態をご確認ください。");
+        return;
+      }
+      if (action === "use" && !points.megami_coupon_active) {
+        alert("利用できる「女神のほほえみ」クーポンがありません。");
+        return;
+      }
+      const prepared = await store.begin(action, DEVICE_ID, points.total_redeemed);
+      operation = prepared.operation;
+      // 別の同時操作が開始された場合は混同しない。
+      if (operation.action !== action) throw new Error("別の特典操作が未確認です。");
+    }
+
+    const url = action === "redeem" ? "/redeem-points" : "/megami-coupon/use";
+    let response, data;
+    try {
+      response = await fetch(API_BASE + url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          device_id: DEVICE_ID,
+          request_id: operation.request_id,
+          coupon_generation: operation.coupon_generation,
+          ...(action === "redeem" ? { required_points: 20 } : {})
+        })
+      });
+      data = await response.json();
+    } catch (_) {
+      alert("通信結果を確認できませんでした。受付番号を保存しています。次回、同じ操作を再確認してください。");
+      return;
+    }
+    if (response.ok && data && data.ok === true) {
+      await store.finish(operation);
+      if (!applyPointsState(data) && !(await loadPoints())) {
+        document.getElementById("stamp-current").textContent = "確認中";
+        redeemButton.style.display = "none";
+      }
+      alert(data.replayed
+        ? "✅ 前回の操作結果を確認しました。"
+        : action === "redeem"
+          ? "🎉 特典を交換しました。クーポンタブをご確認ください。"
+          : "✅ 使用済みにしました。ありがとうございます！");
+    } else if (response.status === 409 || (response.status >= 400 && response.status < 500 &&
+               ![408, 425, 429].includes(response.status))) {
+      await store.finish(operation);
+      await loadPoints();
+      alert("特典の状態を更新しました。内容をご確認ください。" +
+        (data && data.error ? "\n" + data.error : ""));
+    } else {
+      alert("サーバーの応答を確認できませんでした。操作を保存しています。後で再確認してください。");
     }
   } catch (e) {
-    alert("通信エラーが発生しました");
+    console.warn("coupon operation failed:", e);
+    alert("特典操作を確認できませんでした。" +
+      (e && e.message ? "\n" + e.message : ""));
+  } finally {
+    couponOperationBusy = false;
+    redeemButton.disabled = false;
+    useButton.disabled = false;
+    await updateCouponOperationDisplay();
   }
+}
+
+document.getElementById("redeem-btn").addEventListener("click", function () {
+  runCouponOperation("redeem");
 });
 
-document.getElementById("megami-use-btn").addEventListener("click", async () => {
-  if (!confirm("⚠️ 「女神のほほえみ」を使用済みにしますか？\n店主の目の前で押してください。")) return;
-  try {
-    const res = await fetch(`${API_BASE}/megami-coupon/use`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ device_id: DEVICE_ID })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      megamiCouponActive = false;
-      updateMegamiCouponUI();
-      alert("✅ 使用済みにしました！ありがとうございます！");
-    }
-  } catch (e) {
-    alert("通信エラーが発生しました");
-  }
+document.getElementById("megami-use-btn").addEventListener("click", function () {
+  runCouponOperation("use");
 });
+
+async function retryLastCouponOperation() {
+  const store = window.KanatakeCouponOperations;
+  if (!store || couponOperationBusy) return;
+  try {
+    const pending = await store.get(DEVICE_ID);
+    if (pending) await runCouponOperation(pending.action);
+    else await updateCouponOperationDisplay();
+  } catch (e) {
+    alert(e.message || "保存した特典操作を確認できませんでした");
+  }
+}
+
+document.getElementById("coupon-operation-retry")
+  .addEventListener("click", retryLastCouponOperation);
+document.getElementById("coupon-operation-retry-coupon")
+  .addEventListener("click", retryLastCouponOperation);
 
 // ===== カレンダー =====
 let currentYear, currentMonth;
@@ -858,60 +988,82 @@ document.getElementById("coupon-code-btn").addEventListener("click", async () =>
 });
 
 // ===== 保有クーポン =====
+// ===== 保有クーポン =====
 async function loadMyCoupons() {
   const area = document.getElementById("my-coupons-area");
   const list = document.getElementById("my-coupons-list");
   if (!area || !list) return;
   try {
     const res = await fetch(`${API_BASE}/my-coupons?device_id=${encodeURIComponent(DEVICE_ID)}`);
+    if (!res.ok) throw new Error("coupon HTTP " + res.status);
     const data = await res.json();
-    if (!data.coupons || data.coupons.length === 0) {
+    if (!Array.isArray(data.coupons) || data.coupons.length === 0) {
       area.style.display = "none";
       return;
     }
     area.style.display = "block";
-    list.innerHTML = data.coupons.map(c => {
-      const isUsed = !!c.used;
-      return `<div class="my-coupon-card ${isUsed ? 'used' : ''}">
-        ${c.image ? `<img class="my-coupon-img" src="${c.image}" alt="">` : ""}
+    list.innerHTML = data.coupons.map(function (c, index) {
+      const used = !!c.used;
+      return `<div class="my-coupon-card ${used ? "used" : ""}">
+        ${c.image ? `<img class="my-coupon-img" src="${escapeHtml(c.image)}" alt="" onerror="this.style.display='none'">` : ""}
         <div class="my-coupon-info">
-          <div class="my-coupon-name">${escapeHtml(c.name)}</div>
-          <div class="my-coupon-prize">${escapeHtml(c.prize)}</div>
-          <div class="my-coupon-status">${isUsed ? `✅ 使用済み（${formatDate(c.used_at)}）` : `取得: ${formatDate(c.acquired_at)}`}</div>
-          ${!isUsed ? `<button class="btn btn-primary btn-sm" onclick="useMyCoupon('${c.code}')">使用済みにする</button>` : ""}
+          <div class="my-coupon-name">${escapeHtml(c.name || "")}</div>
+          <div class="my-coupon-prize">${escapeHtml(c.prize || "")}</div>
+          <div class="my-coupon-status">${used
+            ? `✅ 使用済み（${formatDate(c.used_at)}）`
+            : `取得: ${formatDate(c.acquired_at)}`}</div>
+          ${!used ? `<button class="btn btn-danger btn-sm" data-coupon-row="${index}">使用済みにする</button>` : ""}
         </div>
       </div>`;
     }).join("");
+    // HTML内にコードを埋め込まない。IDごとに処理し、同コードの別保有行を巻き込まない。
+    list.querySelectorAll("button[data-coupon-row]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        const index = Number(button.dataset.couponRow);
+        const item = data.coupons[index];
+        if (item) useMyCoupon(item.code, item.id);
+      });
+    });
   } catch (e) {
     console.warn("loadMyCoupons failed:", e);
-    if (area) area.style.display = "none";
+    area.style.display = "none";
   }
 }
 
-async function useMyCoupon(code) {
+let fiCouponUseBusy = false;
+async function useMyCoupon(code, couponId) {
+  if (fiCouponUseBusy) return;
   if (!confirm("⚠️ このクーポンを使用済みにしますか？\n店主の目の前で押してください。")) return;
+  fiCouponUseBusy = true;
   try {
+    const body = { device_id: DEVICE_ID, code: code };
+    if (Number.isSafeInteger(couponId) && couponId > 0) body.coupon_id = couponId;
     const res = await fetch(`${API_BASE}/use-coupon`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ device_id: DEVICE_ID, code })
+      body: JSON.stringify(body)
     });
     const data = await res.json();
-    if (data.ok) {
+    if (res.ok && data.ok) {
       alert("✅ 使用済みにしました！");
-      loadMyCoupons();
     } else {
-      alert("❌ " + (data.error || "エラーが発生しました"));
+      alert("❌ " + (data.error || "使用状況を確認してください"));
     }
+    await loadMyCoupons();
   } catch (e) {
-    alert("❌ 通信エラー");
+    alert("通信結果を確認できませんでした。クーポン一覧を更新してご確認ください。");
+    await loadMyCoupons();
+  } finally {
+    fiCouponUseBusy = false;
   }
 }
 
 // ===== QRスキャン =====
 let html5QrCode = null;
+let qrProcessing = false;
 
 document.getElementById("qr-start-btn").addEventListener("click", async () => {
+  if (qrProcessing) return;
   const resultEl = document.getElementById("qr-result");
   resultEl.className = "result-text";
   resultEl.textContent = "";
@@ -930,9 +1082,25 @@ document.getElementById("qr-start-btn").addEventListener("click", async () => {
       { facingMode: "environment" },
       { fps: 10, qrbox: { width: 250, height: 250 } },
       async (decodedText) => {
-        try { await html5QrCode.stop(); } catch (e) {}
-        html5QrCode = null;
-        await processCheckin(decodedText);
+        // 読み取り通知は連続発火するため、同じQRを並行処理しない。
+        if (qrProcessing) return;
+        qrProcessing = true;
+        const reader = html5QrCode;
+        try {
+          if (reader) await reader.stop();
+        } catch (e) {
+          console.warn("QR stop failed:", e);
+        }
+        if (html5QrCode === reader) html5QrCode = null;
+        try {
+          await processCheckin(decodedText);
+        } catch (e) {
+          console.error("QR check-in failed:", e);
+          resultEl.className = "result-text error";
+          resultEl.textContent = "❌ 来店受付処理でエラーが発生しました";
+        } finally {
+          qrProcessing = false;
+        }
       },
       () => {}
     );
@@ -942,59 +1110,173 @@ document.getElementById("qr-start-btn").addEventListener("click", async () => {
   }
 });
 
-async function processCheckin(qrText) {
-  const resultEl = document.getElementById("qr-result");
-  resultEl.className = "result-text loading";
-  resultEl.textContent = "📍 今日の出店場所を確認中…";
-  const todaySpot = getTodaySpot();
-  if (!todaySpot) {
-    resultEl.className = "result-text error";
-    resultEl.textContent = "❌ 今日の出店データが見つかりません";
-    return;
-  }
-  resultEl.textContent = "📍 位置情報を取得中…";
-  let latitude, longitude;
-  try {
-    const pos = await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true, timeout: 10000, maximumAge: 0
-      });
-    });
-    latitude = pos.coords.latitude;
-    longitude = pos.coords.longitude;
-  } catch (e) {
-    resultEl.className = "result-text error";
-    resultEl.textContent = "❌ 位置情報を取得できませんでした。位置情報を許可してください。";
-    return;
-  }
-  resultEl.textContent = "⏳ チェックイン中…";
-  try {
-    const res = await fetch(`${API_BASE}/checkin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        device_id: DEVICE_ID, latitude, longitude,
-        spot_lat: todaySpot.lat, spot_lng: todaySpot.lng, spot_name: todaySpot.name
-      })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      resultEl.className = "result-text success";
-      resultEl.textContent = `🎉 チェックイン成功！\n📍 ${data.location}\n⭐ 現在 ${data.current_points} ポイント`;
-      updateStampUI(data.current_points);
-    } else {
-      resultEl.className = "result-text error";
-      const msgs = {
-        "already checked in today": "本日はすでにチェックイン済みです",
-        "not within 500m of today's location": "出店場所の近くでお試しください"
-      };
-      resultEl.textContent = "❌ " + (msgs[data.error] || data.error);
+async function getOptionalCheckinLocation() {
+  // GPS取得失敗・拒否・タイムアウトはチェックインを妨げない。
+  if (!navigator.geolocation) return null;
+  return new Promise(function (resolve) {
+    let finished = false;
+    const deadline = setTimeout(function () {
+      if (!finished) { finished = true; resolve(null); }
+    }, 3000);
+    try {
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        if (finished) return;
+        finished = true;
+        clearTimeout(deadline);
+        resolve({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy
+        });
+      }, function () {
+        if (finished) return;
+        finished = true;
+        clearTimeout(deadline);
+        resolve(null);
+      }, { enableHighAccuracy: false, timeout: 2500, maximumAge: 60000 });
+    } catch (_) {
+      if (!finished) {
+        finished = true;
+        clearTimeout(deadline);
+        resolve(null);
+      }
     }
-  } catch (e) {
-    resultEl.className = "result-text error";
-    resultEl.textContent = "❌ 通信エラー";
+  });
+}
+
+async function updatePendingCheckinDisplay() {
+  const el = document.getElementById("qr-pending-status");
+  const details = document.getElementById("qr-pending-details");
+  if (!el || !window.KanatakeOfflineCheckin) return;
+  try {
+    const records = await window.KanatakeOfflineCheckin.pendingRecords();
+    const pending = records.filter(function (item) { return item.status === "pending"; }).length;
+    const rejected = records.filter(function (item) { return item.status === "rejected"; }).length;
+    el.textContent = pending || rejected ?
+      "未確定の来店記録: " + pending + "件" +
+      (rejected ? " ／ 確認が必要: " + rejected + "件" : "") : "";
+
+    // 期限切れを含め、端末に残した受付の日時と理由を個別に確認できる。
+    // QR本文・端末IDは画面に出さない。文字列はtextContentで安全に表示する。
+    if (details) {
+      details.replaceChildren();
+      details.hidden = !(pending || rejected);
+      if (pending || rejected) {
+        const summary = document.createElement("summary");
+        summary.textContent = "仮受付の記録を確認する（" + records.length + "件）";
+        details.appendChild(summary);
+        const list = document.createElement("ul");
+        list.className = "qr-pending-list";
+        records.forEach(function (item) {
+          const li = document.createElement("li");
+          const dt = new Date(item.scanned_at);
+          const when = Number.isFinite(dt.getTime()) ?
+            new Intl.DateTimeFormat("ja-JP", {
+              timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit",
+              day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false
+            }).format(dt) : "日時不明";
+          const status = item.status === "rejected" ? "確認が必要" : "仮受付";
+          li.textContent = when + " ／ " + status +
+            (item.status === "rejected" && item.error ? " ／ " + item.error : "");
+          list.appendChild(li);
+        });
+        details.appendChild(list);
+      }
+    }
+  } catch (_) {
+    el.textContent = "仮受付の保存状態を確認できませんでした";
   }
 }
+
+async function retryPendingCheckins() {
+  if (!window.KanatakeOfflineCheckin || navigator.onLine === false) {
+    await updatePendingCheckinDisplay();
+    return;
+  }
+  try {
+    const result = await window.KanatakeOfflineCheckin.flush();
+    if (result.confirmed.length || result.already.length) {
+      await loadPoints();
+    }
+  } catch (e) {
+    console.warn("check-in retry failed:", e);
+  }
+  await updatePendingCheckinDisplay();
+}
+
+async function processCheckin(qrText) {
+  const resultEl = document.getElementById("qr-result");
+  const checkin = window.KanatakeOfflineCheckin;
+  if (!checkin) {
+    resultEl.className = "result-text error";
+    resultEl.textContent = "❌ 来店受付機能を読み込めませんでした";
+    return;
+  }
+  resultEl.className = "result-text loading";
+  resultEl.textContent = "⏳ QRコードを確認中…";
+
+  // 出店情報は取得できた場合だけ使う。通信やGPSで受付を中断しない。
+  const todaySpot = getTodaySpot();
+  const location = await getOptionalCheckinLocation();
+  let queued;
+  try {
+    queued = await checkin.enqueue({
+      device_id: DEVICE_ID,
+      qr_data: qrText,
+      spot_name: todaySpot ? todaySpot.name : "",
+      latitude: location ? location.latitude : null,
+      longitude: location ? location.longitude : null,
+      accuracy: location ? location.accuracy : null
+    });
+  } catch (e) {
+    resultEl.className = "result-text error";
+    resultEl.textContent = "❌ " + (e.message || "仮受付を保存できませんでした");
+    return;
+  }
+
+  // 先に永続保存してからサーバーに送る。通信切断でも記録を失わない。
+  resultEl.className = "result-text loading";
+  resultEl.textContent = "⏳ 来店記録を保存しました。ポイント確認中…";
+  try {
+    const summary = await checkin.flush();
+    const id = queued.record.id;
+    const confirmed = summary.confirmed.find(function (item) { return item.id === id; });
+    const already = summary.already.find(function (item) { return item.id === id; });
+    const rejected = summary.rejected.find(function (item) { return item.id === id; });
+    if (confirmed) {
+      resultEl.className = "result-text success";
+      resultEl.textContent = "🎉 チェックイン成功！1ポイント付与されました。";
+      await loadPoints();
+    } else if (already) {
+      resultEl.className = "result-text error";
+      resultEl.textContent = "本日はすでにチェックイン済みです";
+      await loadPoints();
+    } else if (rejected) {
+      resultEl.className = "result-text error";
+      resultEl.textContent = "❌ サーバーで受付できませんでした: " + rejected.error;
+    } else {
+      resultEl.className = "result-text success";
+      resultEl.textContent = queued.duplicate ?
+        "✅ 本日の来店は仮受付済みです。通信回復後にポイントを確認します。" :
+        "✅ 来店を仮受付しました。通信回復後にポイントを確認します。\n※ まだポイントは加算されていません。";
+    }
+  } catch (e) {
+    resultEl.className = "result-text success";
+    resultEl.textContent = "✅ 来店を仮受付しました。通信回復後にポイントを確認します。\n※ まだポイントは加算されていません。";
+    console.warn("check-in sync deferred:", e);
+  }
+  await updatePendingCheckinDisplay();
+}
+
+// 通信回復時・アプリ復帰時・再起動時に未送信の来店記録を再送する。
+window.addEventListener("online", retryPendingCheckins);
+document.addEventListener("visibilitychange", function () {
+  if (!document.hidden) retryPendingCheckins();
+});
+document.addEventListener("DOMContentLoaded", function () {
+  updatePendingCheckinDisplay();
+  retryPendingCheckins();
+});
 
 // ===== 口コミ =====
 async function loadReviews() {
