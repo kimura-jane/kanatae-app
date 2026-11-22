@@ -501,8 +501,10 @@
     "date": "2026-11-15",
     "placeId": "okudoor_opening_event",
     "name": "OkuDoor オープニングイベント（葛飾区奥戸1-23-1）",
-    "time": ""
-  },
+    "time": "",
+    "lat": 35.7301563,
+    "lng": 139.8570574
+},
   {
     "date": "2026-11-17",
     "placeId": "togasaki_3chome",
