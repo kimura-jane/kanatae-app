@@ -34,6 +34,31 @@
     return;
   }
 
+  // Androidのホーム起動直後は縦長の販売画像をコンパクトに表示。
+  // 画像はタップで元の大きさに戻せる。iOSやブラウザの表示は変更しない。
+  if (/Android/i.test(navigator.userAgent)) {
+    card.classList.add('android-compact-board');
+    image.setAttribute('role', 'button');
+    image.setAttribute('tabindex', '0');
+    image.setAttribute('aria-label', '本日のメニュー画像を拡大');
+
+    function toggleBoardSize() {
+      const expanded = card.classList.toggle('android-board-expanded');
+      image.setAttribute(
+        'aria-label',
+        expanded ? '本日のメニュー画像を縮小' : '本日のメニュー画像を拡大'
+      );
+    }
+
+    image.addEventListener('click', toggleBoardSize);
+    image.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        toggleBoardSize();
+      }
+    });
+  }
+
   let currentUrl = '';
   let sequence = 0;
 
