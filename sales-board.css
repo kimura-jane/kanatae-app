@@ -27,3 +27,18 @@
   color: #777;
   margin: 6px 0;
 }
+
+/* Android: 起動直後の縦長販売画像はコンパクトに表示し、タップで拡大。 */
+#sales-board-section.android-compact-board img {
+  width: auto;
+  max-width: 100%;
+  max-height: min(42vh, 340px);
+  object-fit: contain;
+  cursor: zoom-in;
+}
+
+#sales-board-section.android-compact-board.android-board-expanded img {
+  width: 100%;
+  max-height: none;
+  cursor: zoom-out;
+}
