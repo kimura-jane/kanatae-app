@@ -529,7 +529,9 @@
     "date": "2026-11-22",
     "placeId": "niodori_park_kodomo_festival",
     "name": "みさとこどもまつり（におどり公園）",
-    "time": ""
+    "time": "",
+    "lat": 35.823425,
+    "lng": 139.877355
   },
   {
     "date": "2026-11-23",
@@ -559,13 +561,17 @@
     "date": "2026-11-28",
     "placeId": "family_festa_kawamura_kindergarten",
     "name": "ふぁみりーふぇすた（川村学園女子大学附属保育園）",
-    "time": ""
+    "time": "",
+    "lat": 35.87548426,
+    "lng": 140.0556603
   },
   {
     "date": "2026-11-29",
     "placeId": "akebono_park_soccer_festival",
     "name": "サッカーフェスティバル（あけぼの公園）",
-    "time": ""
+    "time": "",
+    "lat": 35.897083,
+    "lng": 140.004861
   },
   {
     "date": "2026-12-02",
