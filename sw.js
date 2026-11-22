@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'kanatake-v20';
+const CACHE_NAME = 'kanatake-v21';
 
 // ===== Utils =====
 function getBasePath() {
