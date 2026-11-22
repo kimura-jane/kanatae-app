@@ -1059,35 +1059,56 @@ async function useMyCoupon(code, couponId) {
 }
 
 // ===== QRスキャン =====
+// 枠の外や斜めのQRも拾いやすいよう、映像全体をQR専用に解析する。
+// 受付・ポイントの判定は既存の processCheckin に任せる。
 let html5QrCode = null;
 let qrProcessing = false;
+let qrStarting = false;
 
 document.getElementById("qr-start-btn").addEventListener("click", async () => {
-  if (qrProcessing) return;
+  if (qrProcessing || qrStarting) return;
+  const startBtn = document.getElementById("qr-start-btn");
   const resultEl = document.getElementById("qr-result");
   resultEl.className = "result-text";
   resultEl.textContent = "";
-  if (!window.Html5Qrcode) {
-    resultEl.className = "result-text error";
-    resultEl.textContent = "❌ QRスキャナーの読み込みに失敗しました";
-    return;
-  }
-  if (html5QrCode) {
-    try { await html5QrCode.stop(); } catch (e) {}
-    html5QrCode = null;
-  }
-  html5QrCode = new Html5Qrcode("qr-reader");
+  qrStarting = true;
+  startBtn.disabled = true;
+
+  let reader = null;
   try {
-    await html5QrCode.start(
+    if (!window.Html5Qrcode) {
+      throw new Error("QRスキャナーの読み込みに失敗しました");
+    }
+
+    if (html5QrCode) {
+      const previousReader = html5QrCode;
+      html5QrCode = null;
+      try { await previousReader.stop(); } catch (_) {}
+      try { await previousReader.clear(); } catch (_) {}
+    }
+
+    // QR以外のバーコードを解析しない。古い環境では形式指定なしで起動する。
+    const supportedFormats = window.Html5QrcodeSupportedFormats;
+    const decoderOptions = supportedFormats && supportedFormats.QR_CODE !== undefined
+      ? { formatsToSupport: [supportedFormats.QR_CODE] }
+      : undefined;
+    reader = new Html5Qrcode("qr-reader", decoderOptions);
+    html5QrCode = reader;
+
+    await reader.start(
       { facingMode: "environment" },
-      { fps: 10, qrbox: { width: 250, height: 250 } },
+      {
+        fps: 12,
+        aspectRatio: 4 / 3,
+        disableFlip: true
+        // qrboxを固定しない。映像全体が読み取り対象になる。
+      },
       async (decodedText) => {
-        // 読み取り通知は連続発火するため、同じQRを並行処理しない。
-        if (qrProcessing) return;
+        // 同じQRが複数フレームで検出されても、受付は一度だけ処理する。
+        if (qrProcessing || html5QrCode !== reader) return;
         qrProcessing = true;
-        const reader = html5QrCode;
         try {
-          if (reader) await reader.stop();
+          await reader.stop();
         } catch (e) {
           console.warn("QR stop failed:", e);
         }
@@ -1105,8 +1126,19 @@ document.getElementById("qr-start-btn").addEventListener("click", async () => {
       () => {}
     );
   } catch (e) {
+    if (reader && html5QrCode === reader) {
+      html5QrCode = null;
+      try { await reader.stop(); } catch (_) {}
+      try { await reader.clear(); } catch (_) {}
+    }
     resultEl.className = "result-text error";
-    resultEl.textContent = "❌ カメラを起動できませんでした。カメラ権限を確認してください。";
+    resultEl.textContent = window.Html5Qrcode
+      ? "❌ カメラを起動できませんでした。カメラ権限を確認してください。"
+      : "❌ QRスキャナーの読み込みに失敗しました";
+    console.warn("QR scanner start failed:", e);
+  } finally {
+    qrStarting = false;
+    startBtn.disabled = false;
   }
 });
 
