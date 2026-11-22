@@ -568,14 +568,6 @@
     "time": ""
   },
   {
-    "date": "2026-12-01",
-    "placeId": "saitama_kenchou_noriben",
-    "name": "埼玉県庁 本庁舎（浦和区高砂3-15-1／のり弁）",
-    "time": "",
-    "lat": 35.856944,
-    "lng": 139.648889
-  },
-  {
     "date": "2026-12-02",
     "placeId": "otemachi_kawabata_food_garden_noriben",
     "name": "大手町川端フードガーデン（のり弁）",
@@ -585,8 +577,8 @@
   },
   {
     "date": "2026-12-03",
-    "placeId": "dokkyo_univ_soka_noriben",
-    "name": "獨協大学 草加キャンパス（のり弁）",
+    "placeId": "dokkyo_univ_soka",
+    "name": "獨協大学 草加キャンパス",
     "time": "",
     "lat": 35.839861,
     "lng": 139.794333
@@ -595,13 +587,153 @@
     "date": "2026-12-05",
     "placeId": "harumi_futo_park_dog_picnic",
     "name": "第5回晴海ふ頭公園わんわんピクニック",
-    "time": ""
+    "time": "",
+    "lat": 35.647392,
+    "lng": 139.771711
   },
   {
     "date": "2026-12-06",
     "placeId": "shushumarche_christmas_2026",
-    "name": "第29回しゅしゅまるしぇ Christmas Market 2026（ノエル市）",
-    "time": ""
+    "name": "第29回しゅしゅまるしぇ〜ノエル市〜 Christmas Market 2026（たけのつカー＆パーク）",
+    "time": "",
+    "lat": 35.795893,
+    "lng": 139.791399
+  },
+  {
+    "date": "2026-12-08",
+    "placeId": "ks_gobancho_bldg",
+    "name": "k's五番町ビル（今年さいご）",
+    "time": "11:00-13:30",
+    "lat": 35.690076,
+    "lng": 139.736535
+  },
+  {
+    "date": "2026-12-09",
+    "placeId": "otemachi_kawabata_food_garden_noriben",
+    "name": "大手町川端フードガーデン（のり弁）",
+    "time": "",
+    "lat": 35.688422,
+    "lng": 139.765929
+  },
+  {
+    "date": "2026-12-10",
+    "placeId": "dokkyo_univ_soka_noriben",
+    "name": "獨協大学 草加キャンパス（のり弁）",
+    "time": "",
+    "lat": 35.839861,
+    "lng": 139.794333
+  },
+  {
+    "date": "2026-12-12",
+    "placeId": "taikan_sumai_park_koshigaya",
+    "name": "体感すまいパーク越谷（越谷市南町2-4-26／無料プレゼント）",
+    "time": "",
+    "lat": 35.867866,
+    "lng": 139.791634
+  },
+  {
+    "date": "2026-12-13",
+    "placeId": "mizumoto_park",
+    "name": "水元公園",
+    "time": "11:00-15:00",
+    "lat": 35.788554,
+    "lng": 139.869452
+  },
+  {
+    "date": "2026-12-15",
+    "placeId": "togasaki_3chome",
+    "name": "戸ヶ崎3丁目",
+    "time": "11:00-13:30",
+    "lat": 35.799011,
+    "lng": 139.867575
+  },
+  {
+    "date": "2026-12-16",
+    "placeId": "otemachi_kawabata_food_garden_noriben",
+    "name": "大手町川端フードガーデン（のり弁・今年さいご）",
+    "time": "",
+    "lat": 35.688422,
+    "lng": 139.765929
+  },
+  {
+    "date": "2026-12-17",
+    "placeId": "dokkyo_univ_soka",
+    "name": "獨協大学 草加キャンパス",
+    "time": "",
+    "lat": 35.839861,
+    "lng": 139.794333
+  },
+  {
+    "date": "2026-12-19",
+    "placeId": "taikan_sumai_park_yoshikawa_minami",
+    "name": "体感すまいパーク吉川美南（吉川市高久822／無料プレゼント）",
+    "time": "",
+    "lat": 35.84445,
+    "lng": 139.85335
+  },
+  {
+    "date": "2026-12-20",
+    "placeId": "mizumoto_park",
+    "name": "水元公園（今年さいご）",
+    "time": "11:00-15:00",
+    "lat": 35.788554,
+    "lng": 139.869452
+  },
+  {
+    "date": "2026-12-22",
+    "placeId": "hakuten_tbase_noriben",
+    "name": "HAKUTEN T-BASE（のり弁）",
+    "time": "",
+    "lat": 35.643988,
+    "lng": 139.817049
+  },
+  {
+    "date": "2026-12-23",
+    "placeId": "kanatake_santa_hanaguri",
+    "name": "花栗子育てひろばイベント（一般販売なし）",
+    "time": "",
+    "lat": 35.839039,
+    "lng": 139.788236
+  },
+  {
+    "date": "2026-12-24",
+    "placeId": "dokkyo_univ_soka_noriben",
+    "name": "獨協大学 草加キャンパス（のり弁・今年さいご）",
+    "time": "",
+    "lat": 35.839861,
+    "lng": 139.794333
+  },
+  {
+    "date": "2026-12-26",
+    "placeId": "saitama_kodomokatei_center_noriben",
+    "name": "さいたま市子ども家庭総合センター（のり弁）",
+    "time": "",
+    "lat": 35.885611,
+    "lng": 139.644083
+  },
+  {
+    "date": "2026-12-27",
+    "placeId": "michi_no_eki_showa",
+    "name": "道の駅庄和（今年さいご）",
+    "time": "11:00-15:00",
+    "lat": 35.996804,
+    "lng": 139.79478
+  },
+  {
+    "date": "2026-12-30",
+    "placeId": "kashiwanoha_tsite",
+    "name": "柏の葉 T-SITE",
+    "time": "",
+    "lat": 35.89897,
+    "lng": 139.953428
+  },
+  {
+    "date": "2026-12-31",
+    "placeId": "togasaki_3chome",
+    "name": "戸ヶ崎3丁目（今年さいご）",
+    "time": "11:00-13:30",
+    "lat": 35.799011,
+    "lng": 139.867575
   }
 
 ]
