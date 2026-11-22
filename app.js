@@ -986,7 +986,7 @@ async function processCheckin(qrText) {
       resultEl.className = "result-text error";
       const msgs = {
         "already checked in today": "本日はすでにチェックイン済みです",
-        "not within 500m of today's location": `お店から離れすぎています（${data.distance || "?"}m）`
+        "not within 500m of today's location": "出店場所の近くでお試しください"
       };
       resultEl.textContent = "❌ " + (msgs[data.error] || data.error);
     }
