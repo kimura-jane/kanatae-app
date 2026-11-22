@@ -461,8 +461,10 @@
     "date": "2026-11-08",
     "placeId": "en_market_7",
     "name": "第7回 en market",
-    "time": ""
-  },
+    "time": "",
+    "lat": 35.945108,
+    "lng": 139.993872
+},
   {
     "date": "2026-11-10",
     "placeId": "ks_gobancho_building",
