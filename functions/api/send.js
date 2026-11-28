@@ -20,8 +20,27 @@ export async function onRequest({ request, env }) {
     return new Response(null, { status: 204, headers: corsHeaders(allow) });
   }
 
-  if (request.method !== "POST" && request.method !== "GET") {
-    return json({ ok: false, error: "POST or GET only" }, 405, allow);
+  if (request.method !== "POST") {
+    return json({ ok: false, error: "POST only" }, 405, allow);
+  }
+
+  // Server-to-server authentication. No KV access before this check.
+  const secret = env.PUSH_CRON_SECRET;
+  if (typeof secret !== "string" || !secret.trim()) {
+    return json({ ok: false, error: "Push authentication not configured" }, 503, allow);
+  }
+  const supplied = request.headers.get("Authorization") || "";
+  const enc = new TextEncoder();
+  const [expectedHash, suppliedHash] = await Promise.all([
+    crypto.subtle.digest("SHA-256", enc.encode("Bearer " + secret)),
+    crypto.subtle.digest("SHA-256", enc.encode(supplied)),
+  ]);
+  const expected = new Uint8Array(expectedHash);
+  const actual = new Uint8Array(suppliedHash);
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) diff |= expected[i] ^ actual[i];
+  if (diff !== 0) {
+    return json({ ok: false, error: "Unauthorized" }, 401, allow);
   }
 
   // Env check
@@ -34,14 +53,17 @@ export async function onRequest({ request, env }) {
     return json({ ok: false, error: "Missing env/bindings in Pages project", missing: miss }, 500, allow);
   }
 
-  // Cron から hour 指定（任意）
-  let filterHour = null;
-  if (request.method === "POST") {
-    try {
-      const b = await request.json();
-      if (b?.hour === 18 || b?.hour === 21) filterHour = b.hour;
-    } catch {}
+  // A scheduled send must target exactly one supported JST hour.
+  let payload;
+  try {
+    payload = await request.json();
+  } catch {
+    return json({ ok: false, error: "Invalid JSON" }, 400, allow);
   }
+  if (payload?.hour !== 18 && payload?.hour !== 21) {
+    return json({ ok: false, error: "hour must be 18 or 21" }, 400, allow);
+  }
+  const filterHour = payload.hour;
 
   const tomorrowStr = getTomorrowYmdJST(); // "YYYY-MM-DD"
 
